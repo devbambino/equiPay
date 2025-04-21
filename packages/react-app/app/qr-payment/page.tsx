@@ -1,48 +1,41 @@
 "use client";
 
-/* eslint-disable react-hooks/exhaustive-deps */
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { QRCodeGenerator } from "@/components/QRCodeGenerator";
 import { useWeb3 } from "@/contexts/useWeb3";
-import Image from "next/image";
-import { useEffect, useState } from "react";
 
-export default function Home() {
+export default function QRPaymentPage() {
     const {
         address,
         getUserAddress,
         sendCUSD,
+        sendCOP,
         signTransaction,
     } = useWeb3();
 
+    const [amount, setAmount] = useState("");
+
     const [cUSDLoading, setCUSDLoading] = useState(false);
-    const [nftLoading, setNFTLoading] = useState(false);
     const [signingLoading, setSigningLoading] = useState(false);
-    const [userOwnedNFTs, setUserOwnedNFTs] = useState<string[]>([]);
     const [tx, setTx] = useState<any>(undefined);
     const [amountToSend, setAmountToSend] = useState<string>("0.1");
     const [messageSigned, setMessageSigned] = useState<boolean>(false); // State to track if a message was signed
+
+
+    const merchant = process.env.NEXT_PUBLIC_MERCHANT_ADDRESS!;
 
 
     useEffect(() => {
         getUserAddress();
     }, []);
 
-    /*useEffect(() => {
-        const getData = async () => {
-            const tokenURIs = await getNFTs();
-            setUserOwnedNFTs(tokenURIs);
-        };
-        if (address) {
-            getData();
-        }
-    }, [address]);*/
-
     async function sendingCUSD() {
         if (address) {
             setSigningLoading(true);
             try {
-                const tx = await sendCUSD(address, amountToSend);
+                const tx = await sendCUSD(merchant, amountToSend);
                 setTx(tx);
             } catch (error) {
                 console.log(error);
@@ -64,42 +57,31 @@ export default function Home() {
         }
     }
 
-
-    /*async function mintNFT() {
-        setNFTLoading(true);
-        try {
-            const tx = await mintMinipayNFT();
-            const tokenURIs = await getNFTs();
-            setUserOwnedNFTs(tokenURIs);
-            setTx(tx);
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setNFTLoading(false);
-        }
-    }*/
-
-
-
     return (
-        <div className="flex flex-col justify-center items-center">
-            {!address && (
-                <div className="h1">Please install Metamask and connect.</div>
-            )}
-            {address && (
-                <div className="h1">
-                    There you go... a canvas for your next Minipay project!
+        <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-12">
+            <h1 className="text-4xl font-bold mb-6">Generate USDC QR Code</h1>
+            <div className="w-full max-w-xs">
+                <Input
+                    type="number"
+                    placeholder="Amount in USDC"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="mb-4"
+                />
+                <Button
+                    title={`Send ${amount} USDC to this merchant`}
+                    onClick={() => {/* no-op; QR updates automatically */ }}
+                    disabled={!amount}
+                    widthFull
+                >
+                    Preview QR
+                </Button>
+            </div>
+            {amount && (
+                <div className="mt-8">
+                    <QRCodeGenerator amount={amount} />
                 </div>
             )}
-
-            <a
-                href="https://faucet.celo.org/alfajores"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 mb-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-            >
-                Get Test Tokens
-            </a>
 
             {address && (
                 <>
@@ -151,7 +133,6 @@ export default function Home() {
                         </div>
                     )}
 
-                    
 
                 </>
             )}

@@ -98,6 +98,7 @@ export default function Home() {
                 <nav className="space-x-6">
                     <a href="#features" className="hover:text-sun-gold">Features</a>
                     <a href="#about" className="hover:text-sun-gold">About</a>
+                    <a href="/qr-payment" className="hover:text-sun-gold">QR Pay</a>
                     <a href="#get-started" className="px-4 py-2 bg-sun-gold text-gray-900 rounded-full font-semibold hover:bg-yellow-400">Get Started</a>
                 </nav>
             </header>

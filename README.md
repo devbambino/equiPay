@@ -57,6 +57,7 @@ Our three‑week plan ensures core functionality first, then advanced features a
    ```  
 2. **Install dependencies**  
    ```bash
+   cd packages/react-app
    npm install
    ```  
 3. **Configure environment**  
@@ -70,6 +71,20 @@ Our three‑week plan ensures core functionality first, then advanced features a
    ```bash
    npm run dev           # Starts React app with Tailwind
    ```
+6. **Start MiniPay from Localhost**  
+   ```bash
+   curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+  | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+  && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+  | sudo tee /etc/apt/sources.list.d/ngrok.list \
+  && sudo apt update \
+  && sudo apt install ngrok
+
+   ngrok config add-authtoken <token>
+
+   ngrok http 3000           # Exposing MiniPay app with ngrok
+   ```
+   
 
 ## License  
 Released under the.

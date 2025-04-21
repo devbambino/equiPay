@@ -18,6 +18,8 @@ const publicClient = createPublicClient({
 });
 
 const cUSDTokenAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"; // Testnet
+const USDCTokenAddress = "0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B";// Testnet
+const cCOPTokenAddress = "0xe6A57340f0df6E020c1c0a80bC6E13048601f0d4"; // Testnet
 const MINIPAY_NFT_CONTRACT = "0xE8F4699baba6C86DA9729b1B0a1DA1Bd4136eFeF"; // Testnet
 
 export const useWeb3 = () => {
@@ -60,7 +62,7 @@ export const useWeb3 = () => {
         return receipt;
     };
 
-    const mintMinipayNFT = async () => {
+    const sendCOP = async (to: string, amount: string) => {
         let walletClient = createWalletClient({
             transport: custom(window.ethereum),
             chain: celoAlfajores,
@@ -68,51 +70,24 @@ export const useWeb3 = () => {
 
         let [address] = await walletClient.getAddresses();
 
+        const amountInWei = parseEther(amount);
+
         const tx = await walletClient.writeContract({
-            address: MINIPAY_NFT_CONTRACT,
-            abi: MinipayNFTABI.abi,
-            functionName: "safeMint",
+            address: cCOPTokenAddress,
+            abi: StableTokenABI.abi,
+            functionName: "transfer",
             account: address,
-            args: [
-                address,
-                "https://cdn-production-opera-website.operacdn.com/staticfiles/assets/images/sections/2023/hero-top/products/minipay/minipay__desktop@2x.a17626ddb042.webp",
-            ],
+            args: [to, amountInWei],
         });
 
-        const receipt = await publicClient.waitForTransactionReceipt({
+        let receipt = await publicClient.waitForTransactionReceipt({
             hash: tx,
         });
 
         return receipt;
     };
 
-    const getNFTs = async () => {
-        let walletClient = createWalletClient({
-            transport: custom(window.ethereum),
-            chain: celoAlfajores,
-        });
-
-        const minipayNFTContract = getContract({
-            abi: MinipayNFTABI.abi,
-            address: MINIPAY_NFT_CONTRACT,
-            client: publicClient,
-        });
-
-        const [address] = await walletClient.getAddresses();
-        const nfts: any = await minipayNFTContract.read.getNFTsByAddress([
-            address,
-        ]);
-
-        let tokenURIs: string[] = [];
-
-        for (let i = 0; i < nfts.length; i++) {
-            const tokenURI: string = (await minipayNFTContract.read.tokenURI([
-                nfts[i],
-            ])) as string;
-            tokenURIs.push(tokenURI);
-        }
-        return tokenURIs;
-    };
+    
 
     const signTransaction = async () => {
         let walletClient = createWalletClient({
@@ -134,8 +109,7 @@ export const useWeb3 = () => {
         address,
         getUserAddress,
         sendCUSD,
-        mintMinipayNFT,
-        getNFTs,
+        sendCOP,
         signTransaction,
     };
 };
