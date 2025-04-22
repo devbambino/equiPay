@@ -51,6 +51,12 @@ export default function Header() {
                   >
                     Sell
                   </a>
+                  <a
+                    href="/pay"
+                    className="inline-flex items-center hover:border-b-2 px-1 pt-1 text-sm font-medium hover:text-yellow-400 hover:border-yellow-400"
+                  >
+                    Pay
+                  </a>
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
@@ -81,6 +87,13 @@ export default function Header() {
                 className="block border-l-4 border-black py-2 pl-3 pr-4 text-base font-medium"
               >
                 Sell
+              </Disclosure.Button>
+              <Disclosure.Button
+                as="a"
+                href="/pay"
+                className="block border-l-4 border-black py-2 pl-3 pr-4 text-base font-medium"
+              >
+                Pay
               </Disclosure.Button>
             </div>
           </Disclosure.Panel>
