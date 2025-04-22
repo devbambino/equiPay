@@ -45,6 +45,20 @@ export default function QRPaymentPage() {
         }
     }
 
+    async function sendingCOP() {
+        if (address) {
+            setSigningLoading(true);
+            try {
+                const tx = await sendCOP(merchant, amountToSend);
+                setTx(tx);
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setSigningLoading(false);
+            }
+        }
+    }
+
     async function signMessage() {
         setCUSDLoading(true);
         try {
@@ -79,7 +93,31 @@ export default function QRPaymentPage() {
             </div>
             {amount && (
                 <div className="mt-8">
-                    <QRCodeGenerator amount={amount} />
+                    <QRCodeGenerator amount={amount} tokenType={1} />
+                </div>
+            )}
+
+            <h1 className="text-4xl font-bold mb-6">Generate cUSD QR Code</h1>
+            <div className="w-full max-w-xs">
+                <Input
+                    type="number"
+                    placeholder="Amount in cUSD"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="mb-4"
+                />
+                <Button
+                    title={`Send ${amount} cUSD to this merchant`}
+                    onClick={() => {/* no-op; QR updates automatically */ }}
+                    disabled={!amount}
+                    widthFull
+                >
+                    Preview QR
+                </Button>
+            </div>
+            {amount && (
+                <div className="mt-8">
+                    <QRCodeGenerator amount={amount} tokenType={0}/>
                 </div>
             )}
 
@@ -113,7 +151,13 @@ export default function QRPaymentPage() {
                         <Button
                             loading={signingLoading}
                             onClick={sendingCUSD}
-                            title={`Send ${amountToSend} cUSD to your own address`}
+                            title={`Send ${amountToSend} cUSD to the merchant`}
+                            widthFull
+                        />
+                        <Button
+                            loading={signingLoading}
+                            onClick={sendingCOP}
+                            title={`Send ${amountToSend} cCOP to the merchant`}
                             widthFull
                         />
                     </div>

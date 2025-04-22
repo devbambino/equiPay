@@ -12,8 +12,6 @@ export default function Home() {
         address,
         getUserAddress,
         sendCUSD,
-        mintMinipayNFT,
-        getNFTs,
         signTransaction,
     } = useWeb3();
 
@@ -30,15 +28,6 @@ export default function Home() {
         getUserAddress();
     }, []);
 
-    useEffect(() => {
-        const getData = async () => {
-            const tokenURIs = await getNFTs();
-            setUserOwnedNFTs(tokenURIs);
-        };
-        if (address) {
-            getData();
-        }
-    }, [address]);
 
     async function sendingCUSD() {
         if (address) {
@@ -67,26 +56,14 @@ export default function Home() {
     }
 
 
-    async function mintNFT() {
-        setNFTLoading(true);
-        try {
-            const tx = await mintMinipayNFT();
-            const tokenURIs = await getNFTs();
-            setUserOwnedNFTs(tokenURIs);
-            setTx(tx);
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setNFTLoading(false);
-        }
-    }
+
 
 
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
+        <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-4 sm:px-8">
             {/* Header */}
-            <header className="flex items-center justify-between px-8 py-6">
+            <header className="flex items-center justify-between px-8 py-6 max-w-[640px] mx-auto">
                 {/* Logo Concept #3 */}
                 <div className="flex items-center space-x-3">
                     <svg width="48" height="48" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
@@ -98,13 +75,12 @@ export default function Home() {
                 <nav className="space-x-6">
                     <a href="#features" className="hover:text-sun-gold">Features</a>
                     <a href="#about" className="hover:text-sun-gold">About</a>
-                    <a href="/qr-payment" className="hover:text-sun-gold">QR Pay</a>
                     <a href="#get-started" className="px-4 py-2 bg-sun-gold text-gray-900 rounded-full font-semibold hover:bg-yellow-400">Get Started</a>
                 </nav>
             </header>
 
             {/* Hero Section */}
-            <section className="text-center py-20 px-6">
+            <section className="w-full max-w-[640px] py-20 px-4 sm:px-0 text-center">
                 <h1 className="text-5xl font-extrabold mb-4">Equal access. Empowered lives.</h1>
                 <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
                     EquiPay brings low-cost, transparent payments and Buy Now Pay Later financing to merchants and customers in Latin America.
@@ -115,7 +91,7 @@ export default function Home() {
             </section>
 
             {/* Features Section */}
-            <section id="features" className="py-16 px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <section id="features" className="py-16 px-4 sm:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-gray-800 p-6 rounded-2xl shadow-lg">
                     <h3 className="text-2xl font-bold mb-2">Instant QR Payments</h3>
                     <p className="text-gray-300">
@@ -137,7 +113,7 @@ export default function Home() {
             </section>
 
             {/* Footer */}
-            <footer className="text-center py-8 text-gray-500 text-sm">
+            <footer className="text-center py-8 text-gray-500 text-sm max-w-[640px] mx-auto">
                 © 2025 EquiPay. All rights reserved.
             </footer>
         </div>
