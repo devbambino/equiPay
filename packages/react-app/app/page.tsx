@@ -62,30 +62,13 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-4 sm:px-8">
-            {/* Header */}
-            <header className="flex items-center justify-between px-8 py-6 max-w-[640px] mx-auto">
-                {/* Logo Concept #3 */}
-                <div className="flex items-center space-x-3">
-                    <svg width="48" height="48" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                        <rect y="32" width="64" height="32" fill="#2C57E4" />
-                        <rect x="0" y="0" width="64" height="32" rx="32" fill="#FFD166" />
-                    </svg>
-                    <span className="text-2xl font-bold">EquiPay</span>
-                </div>
-                <nav className="space-x-6">
-                    <a href="#features" className="hover:text-sun-gold">Features</a>
-                    <a href="#about" className="hover:text-sun-gold">About</a>
-                    <a href="#get-started" className="px-4 py-2 bg-sun-gold text-gray-900 rounded-full font-semibold hover:bg-yellow-400">Get Started</a>
-                </nav>
-            </header>
-
             {/* Hero Section */}
             <section className="w-full max-w-[640px] py-20 px-4 sm:px-0 text-center">
                 <h1 className="text-5xl font-extrabold mb-4">Equal access. Empowered lives.</h1>
                 <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
                     EquiPay brings low-cost, transparent payments and Buy Now Pay Later financing to merchants and customers in Latin America.
                 </p>
-                <a href="#get-started" className="px-8 py-4 bg-sun-gold text-gray-900 rounded-full text-lg font-semibold hover:bg-yellow-400">
+                <a href="#get-started" className="px-8 py-4 bg-yellow-400 hover:bg-white text-gray-900 rounded-full text-lg font-semibold">
                     Launch the App
                 </a>
             </section>
@@ -111,11 +94,6 @@ export default function Home() {
                     </p>
                 </div>
             </section>
-
-            {/* Footer */}
-            <footer className="text-center py-8 text-gray-500 text-sm max-w-[640px] mx-auto">
-                © 2025 EquiPay. All rights reserved.
-            </footer>
         </div>
     );
 }
