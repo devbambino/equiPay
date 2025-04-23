@@ -16,10 +16,10 @@ const publicClient = createPublicClient({
     transport: http(),
 });
 
-const cUSDTokenAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"; // Testnet
-const USDCTokenAddress = "0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B";// Testnet
-const cCOPTokenAddress = "0xe6A57340f0df6E020c1c0a80bC6E13048601f0d4"; // Testnet
-const MINIPAY_NFT_CONTRACT = "0xE8F4699baba6C86DA9729b1B0a1DA1Bd4136eFeF"; // Testnet
+const cUSDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
+const USDCTokenAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS;// Testnet
+const cKESTokenAddress = process.env.NEXT_PUBLIC_KES_ADDRESS; // Testnet
+const cCOPTokenAddress = process.env.NEXT_PUBLIC_COP_ADDRESS; // Testnet
 
 export const useWeb3 = () => {
     const [address, setAddress] = useState<string | null>(null);
@@ -36,6 +36,43 @@ export const useWeb3 = () => {
         }
     };
 
+    const sendPaymentByCurrency = async (to: string, amount: string, currency: string) => {
+        let walletClient = createWalletClient({
+            transport: custom(window.ethereum),
+            chain: celoAlfajores,
+        });
+
+        let [address] = await walletClient.getAddresses();
+
+        const amountInWei = parseEther(amount);
+
+        let tokenAddress = "";
+        if (currency == "usdc") {
+            tokenAddress = USDCTokenAddress!;
+        } else if (currency == "ccop") {    
+            tokenAddress = cCOPTokenAddress!;
+        }
+        else if (currency == "ckes") {
+            tokenAddress = cKESTokenAddress!;
+        }else {
+            tokenAddress = cUSDTokenAddress!;
+        }
+
+        const tx = await walletClient.writeContract({
+            address: tokenAddress as `0x${string}`,
+            abi: StableTokenABI.abi,
+            functionName: "transfer",
+            account: address,
+            args: [to, amountInWei],
+        });
+
+        let receipt = await publicClient.waitForTransactionReceipt({
+            hash: tx,
+        });
+
+        return receipt;
+    };
+
     const sendCUSD = async (to: string, amount: string) => {
         let walletClient = createWalletClient({
             transport: custom(window.ethereum),
@@ -47,7 +84,7 @@ export const useWeb3 = () => {
         const amountInWei = parseEther(amount);
 
         const tx = await walletClient.writeContract({
-            address: cUSDTokenAddress,
+            address: cUSDTokenAddress! as `0x${string}`,
             abi: StableTokenABI.abi,
             functionName: "transfer",
             account: address,
@@ -72,7 +109,7 @@ export const useWeb3 = () => {
         const amountInWei = parseEther(amount);
 
         const tx = await walletClient.writeContract({
-            address: cCOPTokenAddress,
+            address: cCOPTokenAddress! as `0x${string}`,
             abi: StableTokenABI.abi,
             functionName: "transfer",
             account: address,
@@ -109,6 +146,7 @@ export const useWeb3 = () => {
         getUserAddress,
         sendCUSD,
         sendCOP,
+        sendPaymentByCurrency,
         signTransaction,
     };
 };

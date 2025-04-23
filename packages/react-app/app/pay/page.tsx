@@ -47,10 +47,10 @@ export default function PayPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-4 py-12">
       <h1 className="text-3xl font-bold mb-6">Scan & Pay</h1>
-      <div className="w-full max-w-xs space-y-4">
+      <div className="w-full max-w-xs space-y-4 text-center">
         {/* Show Scan button when not scanning or scanned */}
         {!scanning && !scanData && (
-          <Button title="Start Scan" onClick={() => setScanning(true)} className="w-full"/>
+          <Button title="Start Scan" onClick={() => setScanning(true)} className="bg-yellow-400 hover:bg-white text-gray-900 px-8 py-4 bg-yellow-400 hover:bg-white text-gray-900 rounded-full text-lg font-semibold" />
         )}
 
         {/* Scanner active */}
@@ -69,7 +69,7 @@ export default function PayPage() {
           <div className="mt-4 bg-gray-800 p-4 rounded-lg space-y-2">
             <p>Amount: {scanData.amount} {scanData.currency}</p>
             <p>Merchant: {scanData.merchant}</p>
-            <Button title="Confirm & Pay" onClick={pay} loading={loading} className="mt-2 w-full"/>
+            <Button title="Confirm & Pay" onClick={pay} loading={loading} className="bg-yellow-400 hover:bg-white text-gray-900 px-8 py-4 bg-yellow-400 hover:bg-white text-gray-900 rounded-full text-lg font-semibold" />
           </div>
         )}
 
