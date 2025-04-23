@@ -2,25 +2,27 @@
 ## EquiPAY
 
 ### Description  
-EquiPay is a two‑phase DeFi mini‑app powered by MiniPay and the Mento Protocol on Celo, enabling merchants in Colombia to accept instant QR‑based stablecoin payments (cCOP) and offer zero‑interest Buy‑Now‑Pay‑Later (BNPL) micro‑loans backed by cUSD collateral.
+EquiPay is a DeFi mini‑app powered by MiniPay and the Mento Protocol on Celo, enabling merchants in the Global South to accept instant QR‑based stablecoin payments using their local currencies and offer zero‑interest Buy‑Now‑Pay‑Later (BNPL) micro‑loans backed by cUSD/USDC collateral.
 
 ### Problem  
-Traditional payment and credit services in Latin America often exclude underbanked populations due to high fees, lack of identity infrastructure, and volatile local currencies . Merchants face lost sales opportunities when customers lack liquidity or credit history.
+Traditional payment and credit services in the Global South often exclude underbanked populations due to high fees, lack of identity infrastructure, and volatile local currencies. Meanwhile, merchants face lost sales opportunities when customers lack liquidity or credit history.
 
 ### Solution  
-EquiPay abstracts blockchain complexity behind phone‑number‑based MiniPay flows and smart contracts that manage collateral, lending pools, and repayments. Merchants receive full payment in cCOP instantly, while customers can choose to pay immediately or access a collateralized loan up to 80% of their cUSD balance, with repayments over 1–6 months and interest subsidized by merchants.
+With EquiPay, Merchants receive full payment in their local stablecoins instantly, while customers can choose to pay immediately or access a micro-loan using their cUSD balance as the collateral, with repayments over 1–6 months and interest subsidized by merchants.
+
+More and more people from the Global South is investing in US dollars stablecoins, and now thanks to EquiPay (powered by MiniPay and Mento), those USD stablecoins could be used as collateral to get instant liquidity without needing to sell their tokens.
 
 ## Mission & Impact  
-**Mission:** Empower unbanked and underbanked communities in Colombia and beyond with equitable access to payments and micro‑credit, enabling local commerce and financial stability.  
+**Mission:** Empower unbanked and underbanked communities in the Global South and beyond with equitable access to payments and micro‑credit, enabling local commerce and financial stability.  
 **Impact:**  
 - **Inclusion:** Lowers barriers to entry for digital finance with phone‑number onboarding and sub‑cent transaction costs.  
 - **Liquidity:** Provides on‑demand liquidity through merchant‑funded BNPL, supporting merchants’ sales while giving customers flexible payment options.  
 - **Decentralization:** Leverages collateralized stablecoins and community lending pools, sharing interest revenue with liquidity providers.
 
 ## Key Features  
-- **Instant QR Payments:** Merchants generate dynamic QR codes; customers pay in cCOP with one scan via MiniPay’s phone‑number resolution and sub‑cent fees.  
-- **Zero‑Interest BNPL:** Customers lock cUSD as collateral to borrow up to 80% in cCOP over 1–4 months; merchants absorb a 1%/month interest fee, supporting customer loyalty and sales.  
-- **Liquidity Pools:** Lenders deposit cCOP into smart pools via the Mento SDK, earning 90% of merchant‑paid interest, fostering community‑driven finance.
+- **Instant QR Payments:** Merchants generate dynamic QR codes; customers pay in their local stablecoin currencies with one scan via MiniPay mini app and sub‑cent fees.  
+- **Zero‑Interest BNPL:** Customers lock cUSD as collateral to borrow up to 80% in their local stablecoin currencies over 1–6 months; merchants absorb a 1%/month interest fee, supporting customer loyalty and sales.  
+- **Liquidity Pools:** Lenders deposit their local stablecoin currencies into smart pools via the Mento SDK, earning 90% of merchant‑paid interest, fostering community‑driven finance.
 
 ## Tech Stack  
 - **Smart Contracts:** Solidity + Hardhat for local development, testing, and deployment.  
@@ -45,7 +47,7 @@ The backend uses ContractKit to call custom contracts and Mento core contracts, 
 
 ## Development Roadmap  
 Our three‑week plan ensures core functionality first, then advanced features and polish:  
-- **Week 1 – QR Payment MVP:** Scaffold app, implement QR generation, and integrate MiniPay deeplinks for cCOP transfers.  
+- **Week 1 – QR Payment MVP:** Scaffold app, implement QR generation, and integrate MiniPay for quick and easy transfers.  
 - **Week 2 – Lending Contracts:** Develop and test Solidity contracts for collateral management, BNPL logic, and pool revenue sharing.  
 - **Week 3 – BNPL Integration & QA:** Connect frontend to lending API, conduct end‑to‑end tests on Alfajores, refine UI/UX, and prepare demo submission.
 
