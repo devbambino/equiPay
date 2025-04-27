@@ -26,5 +26,8 @@
   "keywords": [
     "celo-composer",
     "celo"
-  ]
+  ],
+  "overrides": {
+    "ethers": "^5.8.0"
+  }
 }

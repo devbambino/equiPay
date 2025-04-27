@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 
 import { AppProvider } from '@/providers/AppProvider';
+import { Web3Provider } from '@/contexts/methodsWeb3';
 
 export default function RootLayout({
   children,
@@ -10,7 +11,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          <Web3Provider>{children}</Web3Provider>
+        </AppProvider>
       </body>
     </html>
   );

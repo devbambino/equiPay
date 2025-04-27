@@ -3,63 +3,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useWeb3 } from "@/contexts/useWeb3";
+import { methodsWeb3 } from "@/contexts/methodsWeb3";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-    const {
-        address,
-        getUserAddress,
-        sendCUSD,
-        signTransaction,
-    } = useWeb3();
-
-    const [cUSDLoading, setCUSDLoading] = useState(false);
-    const [nftLoading, setNFTLoading] = useState(false);
-    const [signingLoading, setSigningLoading] = useState(false);
-    const [userOwnedNFTs, setUserOwnedNFTs] = useState<string[]>([]);
-    const [tx, setTx] = useState<any>(undefined);
-    const [amountToSend, setAmountToSend] = useState<string>("0.1");
-    const [messageSigned, setMessageSigned] = useState<boolean>(false); // State to track if a message was signed
-
-
-    useEffect(() => {
-        getUserAddress();
-    }, []);
-
-
-    async function sendingCUSD() {
-        if (address) {
-            setSigningLoading(true);
-            try {
-                const tx = await sendCUSD(address, amountToSend);
-                setTx(tx);
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setSigningLoading(false);
-            }
-        }
-    }
-
-    async function signMessage() {
-        setCUSDLoading(true);
-        try {
-            await signTransaction();
-            setMessageSigned(true);
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setCUSDLoading(false);
-        }
-    }
-
-
-
-
-
-
+ 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-4 sm:px-8">
             {/* Hero Section */}

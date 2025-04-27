@@ -1,4 +1,5 @@
-import React, { createContext, useContext } from "react";
+"use client";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   createPublicClient,
   createWalletClient,
@@ -12,7 +13,8 @@ import {
 import { celoAlfajores } from "viem/chains";
 import stableTokenAbiJson from "./cusd-abi.json";
 import { Mento } from "@mento-protocol/mento-sdk";
-import { JsonRpcProvider } from "ethers"; // only for SDK init
+import { JsonRpcProvider } from "@ethersproject/providers"; // only for SDK init
+import { BigNumber } from "ethers";
 
 // — Viem clients —
 const publicClient = createPublicClient({
@@ -26,13 +28,6 @@ const walletClient = createWalletClient({
 });
 const stableTokenAbi = stableTokenAbiJson.abi;
 
-// — Mento SDK init (uses RPC provider only) —
-let mento: Mento;
-(async () => {
-  const rpcUrl = process.env.NEXT_PUBLIC_ALFAJORES_RPC!;
-  const ethProvider = new JsonRpcProvider(rpcUrl);
-  mento = await Mento.create(ethProvider);
-})();
 
 // Web3 API
 export interface IWeb3 {
@@ -48,11 +43,35 @@ export interface IWeb3 {
   ): Promise<string>;
   sendERC20(token: string, to: string, amt: string, account: `0x${string}`): Promise<string>;
   sendCUSD(to: string, amt: string, account: `0x${string}`): Promise<string>;
+  mentoReady: boolean;
 }
 
 const Web3Context = createContext<IWeb3 | undefined>(undefined);
 
 export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [mento, setMento] = useState<Mento | null>(null);
+  const [mentoReady, setMentoReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const rpcUrl = process.env.NEXT_PUBLIC_ALFAJORES_RPC!;
+      const ethProvider = new JsonRpcProvider(rpcUrl);
+      const mentoInstance = await Mento.create(ethProvider);
+      if (mounted) {
+        setMento(mentoInstance);
+        setMentoReady(true);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Helper to throw if mento not ready
+  const requireMento = () => {
+    if (!mento) throw new Error("Mento SDK not initialized");
+    return mento;
+  };
+
   const getBalance = async (token: string, account: `0x${string}`) => {
     const bal = await publicClient.readContract({
       address: token as `0x${string}`,
@@ -65,13 +84,13 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const quoteOut = async (sell: string, buy: string, amt: string) => {
     const sellWei = parseUnits(amt, 18);
-    const outWei = await mento.getAmountOut(sell, buy, sellWei);
+    const outWei = await requireMento().getAmountOut(sell, buy, sellWei);
     return formatUnits(outWei, 18).toString();
   };
 
   const quoteIn = async (sell: string, buy: string, amt: string) => {
     const buyWei = parseUnits(amt, 18);
-    const inWei = await mento.getAmountIn(sell, buy, buyWei);
+    const inWei = await requireMento().getAmountIn(sell, buy, buyWei);
     return formatUnits(inWei, 18).toString();
   };
 
@@ -81,19 +100,31 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     amt: string,
     account: `0x${string}`,
     slippageBps = 100
-  ) => {
-    const pair = await mento.findPairForTokens(sell, buy);
-    const sellWei = parseUnits(amt, 18);
-    const outWei = await mento.getAmountOut(sell, buy, sellWei, pair);
-    const minOut = (outWei * BigInt(10000 - slippageBps)) / BigInt(10000);
-
+  ): Promise<string> => {
+    const mentoInstance = requireMento();
+    const pair = await mentoInstance.findPairForTokens(sell, buy);
+    const sellWei = parseUnits(amt, 18); // viem returns bigint
+    // Convert sellWei from bigint to ethers BigNumber
+    const sellWeiBN = BigNumber.from(sellWei.toString());
+    const outWei = await mentoInstance.getAmountOut(sell, buy, sellWei, pair); // returns bigint
+    // Convert outWei to ethers BigNumber
+    const outWeiBN = BigNumber.from(outWei.toString());
+    // Calculate minOut using ethers BigNumber operations
+    const minOutBN = outWeiBN.mul(10000 - slippageBps).div(10000);
+  
+    console.log("sellWeiBN", sellWeiBN.toString());
+    console.log("outWeiBN", outWeiBN.toString());
+    console.log("minOutBN", minOutBN.toString());
+  
     // 1) Approve
-    const approveTx = await mento.increaseTradingAllowance(sell, sellWei, pair);
+    const approveTx = await mentoInstance.increaseTradingAllowance(sell, sellWei, pair);
     await walletClient.sendTransaction({ to: approveTx.to, data: approveTx.data, account });
-
-    // 2) Swap
-    const swapTx = await mento.swapIn(sell, buy, sellWei, minOut, pair);
+  
+    // 2) Swap with BigNumber parameters
+    const swapTx = await mentoInstance.swapIn(sell, buy, sellWei, minOutBN, pair);
+    console.log("swapTx", swapTx);
     const txHash = await walletClient.sendTransaction({ to: swapTx.to, data: swapTx.data, account });
+    console.log("txHash", txHash);
     return txHash;
   };
 
@@ -109,10 +140,11 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const sendCUSD = (to: string, amt: string, account: `0x${string}`) =>
-    sendERC20(process.env.NEXT_PUBLIC_CUSD_ADDRESS! as `0x${string}`, to as `0x${string}`, amt, account);
+    sendERC20(process.env.NEXT_PUBLIC_USD_ADDRESS! as `0x${string}`, to as `0x${string}`, amt, account);
 
+  // Optionally, you can provide mentoReady in context for UI loading states
   return (
-    <Web3Context.Provider value={{ getBalance, quoteOut, quoteIn, swapIn, sendERC20, sendCUSD }}>
+    <Web3Context.Provider value={{ getBalance, quoteOut, quoteIn, swapIn, sendERC20, sendCUSD, mentoReady }}>
       {children}
     </Web3Context.Provider>
   );
