@@ -36,15 +36,9 @@ export default function Header() {
               </div>
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex flex-shrink-0 items-center space-x-2">
-                  <span className="text-2xl font-bold">EquiPay</span>
+                  <a href="/"><span className="text-2xl font-bold text-[#0e76fe]">Equi<span className="text-yellow-400">Pay</span></span></a>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                  <a
-                    href="/"
-                    className="inline-flex items-center hover:border-b-2 hover:text-yellow-400 hover:border-yellow-400 px-1 pt-1 text-sm font-medium"
-                  >
-                    Home
-                  </a>
                   <a
                     href="/sell"
                     className="inline-flex items-center hover:border-b-2 px-1 pt-1 text-sm font-medium hover:text-yellow-400 hover:border-yellow-400"
