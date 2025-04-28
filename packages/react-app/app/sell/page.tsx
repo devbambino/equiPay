@@ -9,7 +9,7 @@ export default function SellPage() {
   const [mounted, setMounted] = useState(false);
   const { address } = useAccount();
   const [amount, setAmount] = useState("");
-  const [token, setToken] = useState("cop");
+  const [token, setToken] = useState("real");
   const [description, setDescription] = useState("");
   const [allowFallback, setAllowFallback] = useState(true);
   const qrRef = useRef<HTMLDivElement>(null);
@@ -49,7 +49,7 @@ export default function SellPage() {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-4 py-12">
       <h1 className="text-3xl font-bold mb-6">Sell Now</h1>
       
-      {address ? (
+      {mounted && address ? (
         <>
           <div className="w-full max-w-md mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-6 text-center">
             <h2 className="text-2xl font-semibold text-white">Enter Payment Details</h2>
@@ -93,7 +93,7 @@ export default function SellPage() {
       ) : (
         <div className="mt-8">
           <p className="text-lg text-gray-500">
-            Please connect your wallet to generate the QR code.
+            Please connect your wallet to generate the payment QR code.
           </p>
         </div>
       )}
