@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
@@ -21,6 +21,7 @@ export default function PayPage() {
   const { address } = useAccount();
   const [payload, setPayload] = useState<{
     merchant: string;
+    description: string
     amount: string;
     token: string;
     allowFallback: boolean;
@@ -142,6 +143,24 @@ export default function PayPage() {
     }
   };
 
+  // Load payload from URL if present
+  useEffect(() => {
+    if (typeof window !== "undefined" && !payload) {
+      const params = new URLSearchParams(window.location.search);
+      const data = params.get("data");
+      if (data) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(data));
+          setPayload(parsed);
+          setStep("decide");
+        } catch (e) {
+          // If invalid, stay on scan/init
+          setPayload(null);
+        }
+      }
+    }
+  }, []);
+
   if (!mentoReady) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center px-4 py-12">
@@ -156,7 +175,7 @@ export default function PayPage() {
       <h1 className="text-3xl font-bold mb-6">Pay Now</h1>
       {address ? (
         <>
-          <div className="w-full max-w-md mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-6 text-center">
+          <div className="w-full max-w-md mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-6 text-center relative">
             {/* Loading animation overlay */}
             {isLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-60 z-10 rounded-lg">
@@ -164,16 +183,38 @@ export default function PayPage() {
                 <p>Processing...</p>
               </div>
             )}
-            <h2 className="text-2xl font-semibold text-white"></h2>
+            {/* Stepper UI */}
+            <div className="flex justify-between items-center mb-6">
+              <div className={`flex-1 text-xs ${step === "scan" || step === "init" ? "text-yellow-400" : "text-gray-400"}`}>Scan</div>
+              <div className="w-4 h-0.5 bg-gray-600 mx-1" />
+              <div className={`flex-1 text-xs ${step === "decide" ? "text-yellow-400" : "text-gray-400"}`}>Choose path</div>
+              <div className="w-4 h-0.5 bg-gray-600 mx-1" />
+              <div className={`flex-1 text-xs ${step === "confirm" ? "text-yellow-400" : "text-gray-400"}`}>Confirm</div>
+              <div className="w-4 h-0.5 bg-gray-600 mx-1" />
+              <div className={`flex-1 text-xs ${step === "done" ? "text-yellow-400" : "text-gray-400"}`}>Receipt</div>
+            </div>
+            {/* ...existing code... */}
             {step === "init" && (
               <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} />
             )}
             {step === "decide" && payload && (
-              <Button onClick={onPay} title={`Pay ${payload.amount} ${payload.token.toLocaleUpperCase()}`} disabled={isLoading} />
+              <>
+                <p>
+                  You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> {payload?.description?(<>for {payload?.description}</>):("")}
+                </p>
+                <Button onClick={onPay} title={`Pay ${payload.amount} ${payload.token.toLocaleUpperCase()}`} disabled={isLoading} />
+              </>
             )}
             {step === "confirm" && (
               <>
                 <p>
+                  {quote && (
+                    <>
+                    1 USD → {Number(payload?.amount).toFixed(2)} {payload?.token.toLocaleUpperCase()}
+                    <br/><span className="text-xs text-yellow-400">(Quote: {quote} USD)</span>
+                    </>
+                  )}
+                  <br /><br />
                   You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> using <strong>{quote} USD</strong> from your wallet.
                 </p>
                 <Button onClick={onConfirmSwap} title="Confirm & Pay" disabled={isLoading} />
@@ -181,13 +222,12 @@ export default function PayPage() {
             )}
             {step === "done" && txHash && (
               <>
-                <p>🎉 You paid {quote ? (<>
+                <p>🎉 <span className="text-xl text-yellow-400">Congrats!!!</span> 🎉<br/><br/>You paid {quote ? (<>
                   <strong>{quote} USD</strong> (equivalent to {payload?.amount} {payload?.token.toLocaleUpperCase()})
                 </>
-                ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant! <a href={txHash} target="_blank">Tx hash</a></p>
+                ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant!</p>
                 <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} />
               </>
-
             )}
             {/* Scanner is only shown if step is scan and payload is not set */}
             {step === "scan" && !payload && (
