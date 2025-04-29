@@ -21,8 +21,8 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: 'Celo Composer',
-    projectId: process.env.WC_PROJECT_ID ?? '044601f65212332475a09bc14ceb3c34',
+    appName: 'EquiPay',
+    projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID!,
   }
 );
 
