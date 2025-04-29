@@ -7,9 +7,7 @@ import { useAccount } from "wagmi";
 import { methodsWeb3 } from "@/contexts/methodsWeb3";
 import { useToast } from "@/components/ui/ToastProvider";
 
-
 const cUSDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
-const USDCTokenAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS;// Testnet
 const cKESTokenAddress = process.env.NEXT_PUBLIC_KES_ADDRESS; // Testnet
 const cCOPTokenAddress = process.env.NEXT_PUBLIC_COP_ADDRESS; // Testnet
 const cPISOTokenAddress = process.env.NEXT_PUBLIC_PUSO_ADDRESS; // Testnet
@@ -31,6 +29,7 @@ export default function PayPage() {
   const [quote, setQuote] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSwapRequired, setIsSwapRequired] = useState<boolean>(false);
   const { showToast } = useToast();
 
   // Helper to resolve token address
@@ -90,16 +89,29 @@ export default function PayPage() {
       // 2) Fallback cUSD
       let balanceInFallbackToken = await getBalance(cUSDTokenAddress!, address);
       const neededInFallbackToken = await quoteIn(cUSDTokenAddress!, tokenAddress, amount);
-      setQuote(neededInFallbackToken);
-      if (allowFallback && +balanceInFallbackToken >= +neededInFallbackToken) {
-        const hash = await sendCUSD(merchant, neededInFallbackToken, address);
-        setTxHash(hash);
-        setStep("done");
-        showToast("Transaction submitted", "success");
+
+
+      if (+balanceInFallbackToken >= +neededInFallbackToken) {
+        setQuote(neededInFallbackToken);
+
+        //Not enough balance in merchants token, but enough in cUSD
+        if (allowFallback) {
+          // 2) Send cUSD directly
+          setIsSwapRequired(false);
+          /*const hash = await sendCUSD(merchant, neededInFallbackToken, address);
+          setTxHash(hash);
+          setStep("done");
+          showToast("Transaction submitted", "success");*/
+        } else {
+          // 3) Swap cUSD to  merchant currency
+          setIsSwapRequired(true);
+        }
+        setStep("confirm");
+        showToast(`Not enough ${token} in your wallet. We will use USD instead.`, "info");
         return;
+      } else {
+        showToast(`Insufficient balance, please add ${token} or USD to you wallet and try again later.`, "error");
       }
-      setStep("confirm");
-      showToast("Insufficient balance", "error");
     } catch (err: any) {
       if (err.reason === "no valid median") {
         showToast("Swap failed: No valid median", "error");
@@ -119,30 +131,40 @@ export default function PayPage() {
     const { merchant, token, amount } = payload;
     const tokenAddress = getTokenAddress(token);
     try {
-      const hashSwap = await swapIn(cUSDTokenAddress!, tokenAddress, quote, address, 100);
-      // Polling function to wait for the balance to update
-      const waitForBalance = async (minAmount: number, timeout = 60000, interval = 500) => {
-        const start = Date.now();
-        while (Date.now() - start < timeout) {
-          const balance = await getBalance(tokenAddress, address);
-          if (+balance >= +minAmount) return balance;
-          await new Promise((resolve) => setTimeout(resolve, interval));
+      if (isSwapRequired) {
+        // 3) Swap cUSD to  merchant currency
+        const hashSwap = await swapIn(cUSDTokenAddress!, tokenAddress, quote, address, 100);
+        // Polling function to wait for the balance to update
+        const waitForBalance = async (minAmount: number, timeout = 60000, interval = 500) => {
+          const start = Date.now();
+          while (Date.now() - start < timeout) {
+            const balance = await getBalance(tokenAddress, address);
+            if (+balance >= +minAmount) return balance;
+            await new Promise((resolve) => setTimeout(resolve, interval));
+          }
+          return await getBalance(tokenAddress, address);
+        };
+        // Wait for the swapped tokens to reflect in the balance
+        const updatedBalance = await waitForBalance(+amount);
+        if (+updatedBalance >= +amount) {
+          const hashPayment = await sendERC20(tokenAddress, merchant, amount, address);
+          setTxHash(hashPayment);
+          setStep("done");
+          showToast("Payment done!", "success");
+          return;
+        } else {
+          showToast(`Insufficient balance in ${token}, please add more USD and try again later.`, "error");
         }
-        return await getBalance(tokenAddress, address);
-      };
-      // Wait for the swapped tokens to reflect in the balance
-      const updatedBalance = await waitForBalance(+amount);
-      if (+updatedBalance >= +amount) {
-        const hashPayment = await sendERC20(tokenAddress, merchant, amount, address);
-        setTxHash(hashPayment);
-        setStep("done");
-        showToast("Transaction submitted", "success");
-        return;
       } else {
-        showToast("Insufficient balance after swap", "error");
+        //2) Send cUSD directly
+        const hash = await sendCUSD(merchant, quote, address);
+        setTxHash(hash);
+        setStep("done");
+        showToast("Payment done!", "success");
       }
+
     } catch (err) {
-      showToast("Swap failed", "error");
+      showToast("Swap failed, please try again later.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -202,14 +224,14 @@ export default function PayPage() {
             </div>
             {/* ...existing code... */}
             {step === "init" && (
-              <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
+              <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
             )}
             {step === "decide" && payload && (
               <>
                 <p>
-                  You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> {payload?.description?(<>for {payload?.description}</>):("")}
+                  You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> {payload?.description ? (<>for {payload?.description}</>) : ("")}
                 </p>
-                <Button onClick={onPay} title={`Pay ${payload.amount} ${payload.token.toLocaleUpperCase()}`} disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
+                <Button onClick={onPay} title={`Pay ${payload.amount} ${payload.token.toLocaleUpperCase()}`} disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
               </>
             )}
             {step === "confirm" && (
@@ -217,23 +239,23 @@ export default function PayPage() {
                 <p>
                   {quote && (
                     <>
-                    1 USD → {Number(payload?.amount).toFixed(2)} {payload?.token.toLocaleUpperCase()}
-                    <br/><span className="text-xs text-yellow-400">(Quote: {quote} USD)</span>
+                      1 USD → {Number(payload?.amount).toFixed(2)} {payload?.token.toLocaleUpperCase()}
+                      <br /><span className="text-xs text-yellow-400">(Quote: {quote} USD)</span>
                     </>
                   )}
                   <br /><br />
                   You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> using <strong>{quote} USD</strong> from your wallet.
                 </p>
-                <Button onClick={onConfirmSwap} title="Confirm & Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
+                <Button onClick={onConfirmSwap} title="Confirm & Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
               </>
             )}
             {step === "done" && txHash && (
               <>
-                <p>🎉 <span className="text-xl text-yellow-400">Congrats!!!</span> 🎉<br/><br/>You paid {quote ? (<>
+                <p>🎉 <span className="text-xl text-yellow-400">Congrats!!!</span> 🎉<br /><br />You paid {quote ? (<>
                   <strong>{quote} USD</strong> (equivalent to {payload?.amount} {payload?.token.toLocaleUpperCase()})
                 </>
                 ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant!</p>
-                <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
+                <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
               </>
             )}
             {/* Scanner is only shown if step is scan and payload is not set */}
