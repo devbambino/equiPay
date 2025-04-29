@@ -31,9 +31,9 @@ export default function Home() {
                 {/* Hero Image */}
                 <div className="mt-12 w-full max-w-2xl">
                     <Image
-                        src="/hero-illustration.png"
+                        src="/hero-illustration.jpg"
                         alt="EquiPay illustration"
-                        width={800}
+                        width={587}
                         height={400}
                         className="mx-auto"
                     />
