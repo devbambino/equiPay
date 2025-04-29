@@ -5,6 +5,7 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
 import { methodsWeb3 } from "@/contexts/methodsWeb3";
+import { useToast } from "@/components/ui/ToastProvider";
 
 
 const cUSDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
@@ -30,6 +31,7 @@ export default function PayPage() {
   const [quote, setQuote] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { showToast } = useToast();
 
   // Helper to resolve token address
   const getTokenAddress = (token: string) => {
@@ -62,9 +64,8 @@ export default function PayPage() {
           setPayload(JSON.parse(code));
           setStep("decide");
         } catch (e) {
-          console.error("Invalid QR data", e);
-        } finally {
-          setStep("decide");
+          showToast("Invalid QR", "error");
+          setStep("scan");
         }
       }
     }
@@ -83,6 +84,7 @@ export default function PayPage() {
         const hash = await sendERC20(tokenAddress, merchant, amount, address);
         setTxHash(hash);
         setStep("done");
+        showToast("Transaction submitted", "success");
         return;
       }
       // 2) Fallback cUSD
@@ -93,15 +95,17 @@ export default function PayPage() {
         const hash = await sendCUSD(merchant, neededInFallbackToken, address);
         setTxHash(hash);
         setStep("done");
+        showToast("Transaction submitted", "success");
         return;
       }
       setStep("confirm");
+      showToast("Insufficient balance", "error");
     } catch (err: any) {
       if (err.reason === "no valid median") {
-        alert("This token cannot be swapped at the moment. Please try a different token.");
+        showToast("Swap failed: No valid median", "error");
         setStep("scan");
       } else {
-        alert("An error occurred. Please try again.");
+        showToast("An error occurred. Please try again.", "error");
       }
     } finally {
       setIsLoading(false);
@@ -132,12 +136,13 @@ export default function PayPage() {
         const hashPayment = await sendERC20(tokenAddress, merchant, amount, address);
         setTxHash(hashPayment);
         setStep("done");
+        showToast("Transaction submitted", "success");
         return;
       } else {
-        alert("Looks like you don't have enough balance in the currency. Please try again later.");
+        showToast("Insufficient balance after swap", "error");
       }
     } catch (err) {
-      alert("An error occurred during swap/payment. Please try again.");
+      showToast("Swap failed", "error");
     } finally {
       setIsLoading(false);
     }
@@ -184,6 +189,8 @@ export default function PayPage() {
               </div>
             )}
             {/* Stepper UI */}
+            <h2 className="text-2xl font-semibold mb-2">Payment Flow</h2>
+            <div className="h-1 w-16 bg-yellow-400 mx-auto rounded mb-6" />
             <div className="flex justify-between items-center mb-6">
               <div className={`flex-1 text-xs ${step === "scan" || step === "init" ? "text-yellow-400" : "text-gray-400"}`}>Scan</div>
               <div className="w-4 h-0.5 bg-gray-600 mx-1" />
@@ -195,14 +202,14 @@ export default function PayPage() {
             </div>
             {/* ...existing code... */}
             {step === "init" && (
-              <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} />
+              <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
             )}
             {step === "decide" && payload && (
               <>
                 <p>
                   You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> {payload?.description?(<>for {payload?.description}</>):("")}
                 </p>
-                <Button onClick={onPay} title={`Pay ${payload.amount} ${payload.token.toLocaleUpperCase()}`} disabled={isLoading} />
+                <Button onClick={onPay} title={`Pay ${payload.amount} ${payload.token.toLocaleUpperCase()}`} disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
               </>
             )}
             {step === "confirm" && (
@@ -217,7 +224,7 @@ export default function PayPage() {
                   <br /><br />
                   You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> using <strong>{quote} USD</strong> from your wallet.
                 </p>
-                <Button onClick={onConfirmSwap} title="Confirm & Pay" disabled={isLoading} />
+                <Button onClick={onConfirmSwap} title="Confirm & Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
               </>
             )}
             {step === "done" && txHash && (
@@ -226,7 +233,7 @@ export default function PayPage() {
                   <strong>{quote} USD</strong> (equivalent to {payload?.amount} {payload?.token.toLocaleUpperCase()})
                 </>
                 ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant!</p>
-                <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} />
+                <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"/>
               </>
             )}
             {/* Scanner is only shown if step is scan and payload is not set */}

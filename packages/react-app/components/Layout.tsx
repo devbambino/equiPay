@@ -1,9 +1,10 @@
-import { FC, ReactNode } from "react";
+import { FC } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
+import BottomTabBar from "./ui/BottomTabBar";
 
 interface Props {
-    children: ReactNode;
+    children: React.ReactNode;
 }
 const Layout: FC<Props> = ({ children }) => {
     return (
@@ -12,6 +13,8 @@ const Layout: FC<Props> = ({ children }) => {
                 <Header />
                 {children}
                 <Footer />
+                {/* Mobile Bottom Tab Bar */}
+                <BottomTabBar />
             </div>
         </>
     );

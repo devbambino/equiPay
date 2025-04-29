@@ -5,6 +5,7 @@ import QRCodeStyling from "qr-code-styling";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function SellPage() {
   const [mounted, setMounted] = useState(false);
@@ -26,6 +27,7 @@ export default function SellPage() {
   const [copPayload, setCopPayload] = useState("");
   const [copLink, setCopLink] = useState("");
   const [copCopied, setCopCopied] = useState(false);
+  const { showToast } = useToast();
 
   // Update subtotals and payload
   useEffect(() => {
@@ -86,6 +88,7 @@ export default function SellPage() {
     if (copLink) {
       navigator.clipboard.writeText(copLink);
       setCopCopied(true);
+      showToast("Copied to clipboard", "success");
       setTimeout(() => setCopCopied(false), 1500);
     }
   };
@@ -126,7 +129,8 @@ export default function SellPage() {
       {mounted && address ? (
         <>
           <div className="w-full max-w-md mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-6 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Enter Payment Details</h2>
+            <h2 className="text-2xl font-semibold mb-2">Payment Details</h2>
+            <div className="h-1 w-16 bg-yellow-400 mx-auto rounded mb-6" />
             {/* Grouped Card for Inputs */}
             <div className="bg-gray-700 rounded-lg p-6 space-y-4 mb-4">
               <Input
@@ -177,14 +181,11 @@ export default function SellPage() {
                 <Button
                   title={copCopied ? "Copied!" : "Copy payment link"}
                   onClick={handleCopy}
-                  variant="secondary"
+                  variant="default"
                   size="sm"
                   widthFull={false}
-                  className="mt-2"
+                  className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"
                 />
-              )}
-              {copCopied && (
-                <span className="text-green-400 text-xs mt-1">Copied to clipboard</span>
               )}
             </div>
             {/* JSON Preview */}
