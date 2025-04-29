@@ -34,9 +34,7 @@ export default function ManagePage() {
   const { address } = useAccount();
   const web3 = methodsWeb3(); // Call directly, not in useMemo
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [history, setHistory] = useState<TransactionRecord[]>([]);
   const [loadingBalances, setLoadingBalances] = useState(true);
-  const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -48,19 +46,6 @@ export default function ManagePage() {
       const balsWithSymbol = bals.map((b, i) => ({ token: tokenSymbols[i], balance: b.balance }));
       setBalances(balsWithSymbol);
       setLoadingBalances(false);
-
-      /*setLoadingHistory(true);
-      const txs = await web3.getAllTransactionHistory(tokenAddresses, address); // use web3
-      const txsWithSymbol = txs.map((tx) => ({
-        hash: tx.hash,
-        date: new Date(tx.timestamp * 1000).toLocaleString(),
-        token: tokenSymbols[tokenAddresses.indexOf(tx.token)] || tx.token,
-        amount: tx.value,
-        from: tx.from,
-        to: tx.to,
-      }));
-      setHistory(txsWithSymbol);
-      setLoadingHistory(false);*/
     }
     loadData();
   }, [address]); // web3 is now stable
@@ -93,40 +78,6 @@ export default function ManagePage() {
           </div>
         )}
       </section>
-
-      {/* History Section
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">History</h2>
-        {loadingHistory ? (
-          <div className="animate-spin h-8 w-8 border-4 border-gray-700 border-t-white rounded-full"></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-gray-800 rounded-lg overflow-hidden">
-              <thead>
-                <tr className="bg-gray-700">
-                  <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-4 py-2 text-left">Token</th>
-                  <th className="px-4 py-2 text-right">Amount</th>
-                  <th className="px-4 py-2 text-left">From</th>
-                  <th className="px-4 py-2 text-left">To</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((tx) => (
-                  <tr key={tx.hash} className="border-b border-gray-700">
-                    <td className="px-4 py-2">{tx.date}</td>
-                    <td className="px-4 py-2">{tx.token}</td>
-                    <td className="px-4 py-2 text-right">{tx.amount}</td>
-                    <td className="px-4 py-2 truncate max-w-xs">{tx.from}</td>
-                    <td className="px-4 py-2 truncate max-w-xs">{tx.to}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-       */}
     </div>
   );
 }

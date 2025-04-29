@@ -14,7 +14,6 @@ import { celoAlfajores } from "viem/chains";
 import stableTokenAbiJson from "./cusd-abi.json";
 import { Mento } from "@mento-protocol/mento-sdk";
 import { JsonRpcProvider } from "@ethersproject/providers"; // only for SDK init
-import { BigNumber } from "ethers";
 
 // — Viem clients —
 const publicClient = createPublicClient({
@@ -44,8 +43,6 @@ export interface IWeb3 {
   ): Promise<string>;
   sendERC20(token: string, to: string, amt: string, account: `0x${string}`): Promise<string>;
   sendCUSD(to: string, amt: string, account: `0x${string}`): Promise<string>;
-  getTransactionHistory(token: string, user: string): Promise<Array<{ hash: string; from: string; to: string; value: string; timestamp: number }>>;
-  getAllTransactionHistory(tokens: string[], user: string): Promise<Array<{ hash: string; from: string; to: string; value: string; timestamp: number; token: string }>>;
   mentoReady: boolean;
 }
 
@@ -100,22 +97,6 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     return results;
   };
 
-  const getAllTransactionHistory = async (tokens: string[], user: string) => {
-    const all: Array<{ hash: string; from: string; to: string; value: string; timestamp: number; token: string }> = [];
-    await Promise.all(
-      tokens.map(async (token) => {
-        const txs = await getTransactionHistory(token, user);
-        txs.forEach((tx) => {
-          if (tx) {
-            all.push({ ...tx, token });
-          }
-        });
-      })
-    );
-    all.sort((a, b) => b.timestamp - a.timestamp);
-    return all;
-  };
-
   const quoteOut = async (sell: string, buy: string, amt: string) => {
     const sellWei = parseUnits(amt, 18);
     const outWei = await requireMento().getAmountOut(sell, buy, sellWei);
@@ -167,66 +148,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendCUSD = (to: string, amt: string, account: `0x${string}`) =>
     sendERC20(process.env.NEXT_PUBLIC_USD_ADDRESS! as `0x${string}`, to as `0x${string}`, amt, account);
 
-  function toTopicAddress(address: string) {
-    return '0x' + address.toLowerCase().replace(/^0x/, '').padStart(64, '0');
-  }
-
-  const getTransactionHistory = async (token: string, user: string) => {
-    const [transferTopic] = encodeEventTopics({ abi: stableTokenAbi, eventName: 'Transfer' });
-    const userAddress = user.startsWith('0x') ? user : `0x${user}`;
-    const userTopic = toTopicAddress(userAddress);
-    // Query for logs where user is sender
-    const fromLogs = await publicClient.getLogs({
-      address: token as `0x${string}`,
-      event: parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)"),
-      abi: stableTokenAbi,
-      fromBlock: "0x0",
-      toBlock: "latest",
-      topics: [transferTopic, userTopic]
-    });
-    const toLogs = await publicClient.getLogs({
-      address: token as `0x${string}`,
-      event: parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)"),
-      abi: stableTokenAbi,
-      fromBlock: "0x0",
-      toBlock: "latest",
-      topics: [transferTopic, null, userTopic]
-    });
-    // Merge and deduplicate logs by transaction hash + logIndex
-    const allLogs = [...fromLogs, ...toLogs];
-    const uniqueLogs = Array.from(new Map(allLogs.map(log => [log.transactionHash + '-' + log.logIndex, log])).values());
-    console.log('getTransactionHistory uniqueLogs:', uniqueLogs);
-    const history = await Promise.all(
-      uniqueLogs.map(async (log) => {
-        try {
-          const decoded = decodeEventLog({
-            abi: stableTokenAbi,
-            data: log.data,
-            topics: log.topics,
-            eventName: 'Transfer'
-          });
-          if (!decoded.args) {
-            console.error('Decoded args missing', log, decoded);
-            return null;
-          }
-          // Destructure from the decoded.args object
-          const { from, to, value } = decoded.args as { from: string; to: string; value: bigint };
-          const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
-          return {
-            hash: log.transactionHash as string,
-            from,
-            to,
-            value: formatUnits(value, 18),
-            timestamp: Number(block.timestamp),
-          };
-        } catch (error) {
-          console.error('Error decoding log', log, error);
-          return null;
-        }
-      })
-    );
-    return history.filter(tx => tx !== null) as Array<{ hash: string; from: string; to: string; value: string; timestamp: number }>;
-  };
+  
 
   // Optionally, you can provide mentoReady in context for UI loading states
   return (
@@ -238,8 +160,6 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
       swapIn,
       sendERC20,
       sendCUSD,
-      getTransactionHistory,
-      getAllTransactionHistory,
       mentoReady
     }}>
       {children}
