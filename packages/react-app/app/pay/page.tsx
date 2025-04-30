@@ -83,7 +83,7 @@ export default function PayPage() {
         const hash = await sendERC20(tokenAddress, merchant, amount, address);
         setTxHash(hash);
         setStep("done");
-        showToast("Transaction submitted", "success");
+        showToast("Payment done!", "success");
         return;
       }
       // 2) Fallback cUSD
@@ -92,7 +92,7 @@ export default function PayPage() {
 
 
       if (+balanceInFallbackToken >= +neededInFallbackToken) {
-        setQuote(neededInFallbackToken);
+        setQuote(Number(neededInFallbackToken).toFixed(3));
 
         //Not enough balance in merchants token, but enough in cUSD
         if (allowFallback) {
@@ -113,6 +113,7 @@ export default function PayPage() {
         showToast(`Insufficient balance, please add ${token} or USD to you wallet and try again later.`, "error");
       }
     } catch (err: any) {
+      console.error("Pay Error onPay:", err);
       if (err.reason === "no valid median") {
         showToast("Swap failed: No valid median", "error");
         setStep("scan");
@@ -163,8 +164,21 @@ export default function PayPage() {
         showToast("Payment done!", "success");
       }
 
-    } catch (err) {
-      showToast("Swap failed, please try again later.", "error");
+    } catch (err: any) {
+      console.error("Pay Error onSwap:", err);
+      
+      if (err.reason === "no valid median") {
+        showToast("Swap failed: No valid median", "error");
+        setStep("scan");
+      } else if (err.reason === "An internal error was received") {
+        //TransactionExecutionError: An internal error was received.
+        showToast("Swap failed: No valid median", "error");
+        setStep("scan");
+      } else {
+        showToast("Swap failed, please try again later.", "error");
+      }
+
+      
     } finally {
       setIsLoading(false);
     }
@@ -237,22 +251,21 @@ export default function PayPage() {
             {step === "confirm" && (
               <>
                 <p>
+                  You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> using <strong>{quote} USD</strong> from your wallet.
                   {quote && (
                     <>
-                      1 USD → {Number(payload?.amount).toFixed(2)} {payload?.token.toLocaleUpperCase()}
-                      <br /><span className="text-xs text-yellow-400">(Quote: {quote} USD)</span>
+                      <br /><span className="text-xs text-yellow-400">( Rate: 1 USD ≈ {(Number(payload?.amount)/Number(quote)).toFixed(2)} {payload?.token.toLocaleUpperCase()} )</span>
                     </>
                   )}
-                  <br /><br />
-                  You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> using <strong>{quote} USD</strong> from your wallet.
                 </p>
                 <Button onClick={onConfirmSwap} title="Confirm & Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
               </>
             )}
             {step === "done" && txHash && (
               <>
-                <p>🎉 <span className="text-xl text-yellow-400">Congrats!!!</span> 🎉<br /><br />You paid {quote ? (<>
-                  <strong>{quote} USD</strong> (equivalent to {payload?.amount} {payload?.token.toLocaleUpperCase()})
+                <p>🎉 <span className="text-xl text-yellow-400">Congrats!!!</span> 🎉
+                <br /><br />You paid {quote ? (<>
+                  <strong>{quote} USD</strong> (≈ {payload?.amount} {payload?.token.toLocaleUpperCase()})
                 </>
                 ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant!</p>
                 <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />

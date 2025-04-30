@@ -128,10 +128,23 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     const approveTx = await mentoInstance.increaseTradingAllowance(sell, sellWei, pair);
     await walletClient.sendTransaction({ to: approveTx.to as `0x${string}`, data: approveTx.data as `0x${string}`, account });
 
-    // Swap
-    const swapTx = await mentoInstance.swapIn(sell, buy, sellWei, minOutBN, pair);
-    const txHash = await walletClient.sendTransaction({ to: swapTx.to as `0x${string}`, data: swapTx.data as `0x${string}`, account });
-    return txHash as string;
+    // Retry logic for swap
+    let lastError;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const swapTx = await mentoInstance.swapIn(sell, buy, sellWei, minOutBN, pair);
+        const txHash = await walletClient.sendTransaction({ to: swapTx.to as `0x${string}`, data: swapTx.data as `0x${string}`, account });
+        return txHash as string;
+      } catch (err) {
+        console.error("Error swapIn:", err);
+        lastError = err;
+        if (attempt < 3) {
+          // Optionally add a small delay before retrying
+          await new Promise(res => setTimeout(res, 500));
+        }
+      }
+    }
+    throw lastError;
   };
 
   const sendERC20 = async (token: string, to: string, amt: string, account: `0x${string}`) => {

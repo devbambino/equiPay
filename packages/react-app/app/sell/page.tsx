@@ -63,7 +63,7 @@ export default function SellPage() {
       let name = "COP";
       let decimals = 2;
       if (token === "cop") {
-        rate = 0.00025; symbol = "cCOP"; fiat = "$"; name = "COP"; decimals = 2;
+        rate = 0.00025; symbol = "cCOP"; fiat = "COP$"; name = "COP"; decimals = 2;
       } else if (token === "ghs") {
         rate = 0.07; symbol = "cGHS"; fiat = "₵"; name = "GHS"; decimals = 2;
       } else if (token === "kes") {
@@ -221,7 +221,7 @@ export default function SellPage() {
               <div className="text-lg font-medium text-yellow-300 mb-2">
                 You will receive {fiat}{subtotal} {quote && (
                     <>
-                      <br /> or ≈ $USD {Number(quote).toFixed(2)} 
+                      (≈ $USD {Number(quote).toFixed(2)}) 
                       <br /><span className="text-xs text-white">($USD 1  ≈ {fiat}{(Number(amount)/Number(quote)).toFixed(2)})</span>
                     </>
                   )}
