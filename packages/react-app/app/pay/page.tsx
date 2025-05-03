@@ -57,7 +57,7 @@ export default function PayPage() {
       setPayload(JSON.parse(decoded));
       setStep("decide");
     } catch {
-      console.error("Invalid QR payload");
+      //console.error("Invalid QR payload");
     }
   };
   const handleScan = (detectedCodes: { rawValue: string }[]) => {
@@ -89,7 +89,7 @@ export default function PayPage() {
         let fee = rate * Number(amount);
         const amountWithFee = (Number(amount) - fee).toFixed(3);
         const hash = await sendERC20(tokenAddress, merchant, amountWithFee, address);
-        console.log("onPay localToken merchant", hash);
+        //console.log("onPay localToken merchant", hash);
         setTxHash(hash);
 
         // Polling function to wait for the balance to update
@@ -113,7 +113,7 @@ export default function PayPage() {
         let adjustedFee = fee;
         if (balanceAfterPayment < fee) { adjustedFee = balanceAfterPayment; }
         const hashFee = await sendERC20(tokenAddress, equiPayAddress!, `${adjustedFee}`, address);
-        console.log("onPay localToken fee", hashFee);
+        //console.log("onPay localToken fee", hashFee);
         setTxHash(hashFee);
 
         setStep("done");
@@ -135,8 +135,8 @@ export default function PayPage() {
       }
 
       const neededInFallbackToken = await quoteIn(USDTokenAddress!, tokenAddress, amount);
-      console.log("balanceInFallbackToken", balanceInFallbackToken);
-      console.log("neededInFallbackToken", neededInFallbackToken);
+      //console.log("balanceInFallbackToken", balanceInFallbackToken);
+      //console.log("neededInFallbackToken", neededInFallbackToken);
 
       const adjustedQuote = Number(neededInFallbackToken).toFixed(3)
       setQuote(adjustedQuote);
@@ -161,7 +161,7 @@ export default function PayPage() {
         return;
       }
     } catch (err: any) {
-      console.error("Pay Error onPay:", err);
+      //console.error("Pay Error onPay:", err);
       // Extract a string error message from the error object
       const errorStr =
         typeof err === "string"
@@ -198,7 +198,7 @@ export default function PayPage() {
           const start = Date.now();
           while (Date.now() - start < timeout) {
             const balance = await getBalance(tokenAddress, address);
-            console.log("onSwap swap Waiting for token balance update... lastBalance:", lastBalance, " balance:", balance);
+            //console.log("onSwap swap Waiting for token balance update... lastBalance:", lastBalance, " balance:", balance);
             if (+balance > +lastBalance) return balance;
             await new Promise((resolve) => setTimeout(resolve, interval));
           }
@@ -211,7 +211,7 @@ export default function PayPage() {
         if (+updatedBalance >= +amountWithFee) {
           //Payment to the merchant
           const hashPayment = await sendERC20(tokenAddress, merchant, amountWithFee, address);
-          console.log("onSwap localToken merchant", hashPayment);
+          //console.log("onSwap localToken merchant", hashPayment);
           //console.log(`onSwap pay merchant balance:${updatedBalance} balanceBig:${BigInt(updatedBalance)}`);
           setTxHash(hashPayment);
 
@@ -230,16 +230,16 @@ export default function PayPage() {
           await new Promise(res => setTimeout(res, waitingTime));
           //updatedBalance = await waitForBalance(updatedBalance);
 
-          console.log("onSwap pay merchant balance:", updatedBalance, " balanceNumber:", +updatedBalance, " amountWithFee:", amountWithFee);
+          //console.log("onSwap pay merchant balance:", updatedBalance, " balanceNumber:", +updatedBalance, " amountWithFee:", amountWithFee);
           const updatedBalanceInWei = parseUnits(updatedBalance, 18);
 
           //Payment to EquiPay
           let adjustedFee = parseUnits(fee.toString(), 18);
           let balanceAfterPaymentInWei = updatedBalanceInWei - parseUnits(amountWithFee, 18);;
           if (balanceAfterPaymentInWei < adjustedFee) { adjustedFee = balanceAfterPaymentInWei; }
-          console.log("onSwap pay fee2 balanceAfterPayment:", balanceAfterPaymentInWei, " adjustedFee:", `${adjustedFee}`);
+          //console.log("onSwap pay fee2 balanceAfterPayment:", balanceAfterPaymentInWei, " adjustedFee:", `${adjustedFee}`);
           const hashFee = await sendERC20(tokenAddress, equiPayAddress!, `${adjustedFee}`, address, true);
-          console.log("onSwap localToken fee", hashFee);
+          //console.log("onSwap localToken fee", hashFee);
           setTxHash(hashFee);
 
           setStep("done");
@@ -256,7 +256,7 @@ export default function PayPage() {
         const fee = rate * Number(quote);
         const quoteWithFee = (Number(quote) - fee).toFixed(3);
         const hashPayment = await sendUSD(merchant, quoteWithFee, address);
-        console.log("onSwap USD merchant", hashPayment);
+        //console.log("onSwap USD merchant", hashPayment);
         setTxHash(hashPayment);
 
         // Polling function to wait for the balance to update
@@ -276,7 +276,7 @@ export default function PayPage() {
 
         //Payment to EquiPay
         const hashFee = await sendUSD(equiPayAddress!, `${Number(quote) - Number(quoteWithFee)}`, address);
-        console.log("onSwap USD fee", hashFee);
+        //console.log("onSwap USD fee", hashFee);
         setTxHash(hashFee);
 
         setStep("done");
@@ -284,7 +284,7 @@ export default function PayPage() {
       }
 
     } catch (err: any) {
-      console.error("Swap Error onSwap:", err);
+      //console.error("Swap Error onSwap:", err);
       // Extract a string error message from the error object
       const errorStr =
         typeof err === "string"

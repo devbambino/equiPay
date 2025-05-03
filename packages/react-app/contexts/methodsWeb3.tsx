@@ -121,7 +121,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const quoteIn = async (sell: string, buy: string, amt: string) => {
     //change decimals to 6 if token is USDC, 18 for others
     let decimals = 18;
-    if (sell === process.env.NEXT_PUBLIC_USDC_ADDRESS!) {decimals = 6;}
+    if (sell === process.env.NEXT_PUBLIC_USDC_ADDRESS!) { decimals = 6; }
     const buyWei = parseUnits(amt, 18);
     const inWei = await requireMento().getAmountIn(sell, buy, buyWei);
     return formatUnits(BigInt(inWei.toString()), decimals).toString();
@@ -158,7 +158,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         const txHash = await walletClient.sendTransaction({ to: swapTx.to as `0x${string}`, data: swapTx.data as `0x${string}`, account });
         return txHash as string;
       } catch (err) {
-        console.error("Error swapIn:", err);
+        //console.error("Error swapIn:", err);
         lastError = err;
         if (attempt < 3) {
           // Optionally add a small delay before retrying
@@ -175,28 +175,34 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token === process.env.NEXT_PUBLIC_USDC_ADDRESS!) { decimals = 6; }
 
     let amtWei = parseUnits(amt, decimals);
-    if(amtInWei) {
+    if (amtInWei) {
       amtWei = BigInt(amt);
     }
     console.log("sendERC20 Sending ", amtWei, " to ", to, " from ", account);
     const data = encodeFunctionData({
       abi: [parseAbiItem("function transfer(address,uint256) external")!],
       functionName: "transfer",
-      args: [process.env.NEXT_PUBLIC_EQUIPAY_WALLET! as `0x${string}`, amtWei],
+      args: [to as `0x${string}`, amtWei],
     });
 
     // Retry logic for swap
     let lastError;
-    for (let attempt = 1; attempt <= 10; attempt++) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        const txHash = await walletClient.sendTransaction({ to: token as `0x${string}`, data: data as `0x${string}`, account });
+        //const currentNonce = await publicClient.getTransactionCount({ address: account });
+        const txHash = await walletClient.sendTransaction({
+          to: token as `0x${string}`,
+          data: data as `0x${string}`,
+          account,
+          //nonce: currentNonce,
+        });
         return txHash as string;
       } catch (err) {
-        console.error("Error sendERC20 attempt:" , attempt, " error:", err);
+        //console.error("Error sendERC20 attempt:", attempt, " error:", err);
         lastError = err;
-        if (attempt < 10) {
+        if (attempt < 5) {
           // Optionally add a small delay before retrying
-          await new Promise(res => setTimeout(res, 1500));
+          await new Promise(res => setTimeout(res, 3000));
         }
       }
     }

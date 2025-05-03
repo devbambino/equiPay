@@ -120,11 +120,11 @@ export default function SellPage() {
     try {
       const tokenAddress = getTokenAddress(token);
       const neededInFallbackToken = await quoteIn(USDTokenAddress!, tokenAddress, amount);
-      console.log("neededInFallbackToken", neededInFallbackToken);
+      //console.log("neededInFallbackToken", neededInFallbackToken);
       setFeeUsd(rate * Number(neededInFallbackToken));
       setQuote(neededInFallbackToken);
     } catch (err: any) {
-      console.error("Sell quote error:", err);
+      //console.error("Sell quote error:", err);
       // Extract a string error message from the error object
       const errorStr =
         typeof err === "string"

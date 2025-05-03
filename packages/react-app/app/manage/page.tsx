@@ -104,7 +104,7 @@ export default function ManagePage() {
         <>
           <div className="w-full max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-8 text-center">
             <div>
-              <h2 className="text-2xl font-semibold mb-2">Your Balance</h2>
+              <h2 className="text-2xl font-semibold mb-2">Your Balances</h2>
               <div className="h-1 w-16 bg-yellow-400 mx-auto rounded mb-6" />
 
               {/* Total summary
@@ -152,7 +152,7 @@ export default function ManagePage() {
                         showToast(`Swap completed. Please go to MiniPay's home and click the Withdraw button.`, "success");
                         await loadData();
                       } catch (err: any) {
-                        console.error("Withdraw error:", err);
+                        //console.error("Withdraw error:", err);
                         // Extract a string error message from the error object
                         const errorStr =
                           typeof err === "string"
@@ -232,7 +232,7 @@ export default function ManagePage() {
                               showToast(`Swap to USD complete. You can now withdraw.`, "success");
                               await loadData();
                             } catch (err: any) {
-                              console.error("Swap error:", err);
+                              //console.error("Swap error:", err);
                               // Extract a string error message from the error object
                               const errorStr =
                                 typeof err === "string"
