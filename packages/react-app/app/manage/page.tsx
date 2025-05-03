@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 // Map token symbols to addresses
 const TOKEN_MAP: Record<string, string> = {
   USD: process.env.NEXT_PUBLIC_USD_ADDRESS!,
+  USDC: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
   COP: process.env.NEXT_PUBLIC_COP_ADDRESS!,
   KES: process.env.NEXT_PUBLIC_KES_ADDRESS!,
   REAL: process.env.NEXT_PUBLIC_REAL_ADDRESS!,
@@ -85,7 +86,7 @@ export default function ManagePage() {
   }, [address]); // web3 is now stable
 
   // Calculate total balance (sum of all tokens, just for display)
-  const totalBalance = balances.reduce((acc, b) => acc + Number(b.balance), 0);
+  //const totalBalance = balances.reduce((acc, b) => acc + Number(b.balance), 0);
 
   if (!mentoReady) {
     return (
@@ -124,13 +125,51 @@ export default function ManagePage() {
                     variant="default"
                     size="sm"
                     className="w-full bg-yellow-400 hover:bg-white text-gray-900 rounded-full mt-4"
-                    disabled={!!swappingToken}
+                    disabled={Number(usdBalance) === 0 || !!swappingToken}
                     onClick={async () => {
                       if (!address) return;
-                      setSwappingToken("USD");
-                      showToast(`Withdrawal requested for USD`, "info");
-                      window.open(deeplinkWithdraw, "_blank");
-                      setSwappingToken(null);
+                      try {
+                        setSwappingToken("USD");
+                        showToast(`Swapping to USDC to be used in MiniPay...`, "info");
+                        const prevUSDCBalance = await getBalance(TOKEN_MAP["USDC"], address);
+                        const cusdBalance = await getBalance(TOKEN_MAP["USD"], address);
+                        await swapIn(
+                          TOKEN_MAP["USD"],
+                          TOKEN_MAP["USDC"],
+                          cusdBalance,
+                          address
+                        );
+                        // Poll for USDC balance update
+                        const waitForUSDCBalance = async (oldBalance: number, timeout = 60000, interval = 1000) => {
+                          const start = Date.now();
+                          while (Date.now() - start < timeout) {
+                            const newBalance = parseFloat(await getBalance(TOKEN_MAP["USDC"], address));
+                            if (newBalance > oldBalance) return;
+                            await new Promise(res => setTimeout(res, interval));
+                          }
+                        };
+                        await waitForUSDCBalance(parseFloat(prevUSDCBalance));
+                        showToast(`Swap completed. Please go to MiniPay's home and click the Withdraw button.`, "success");
+                        await loadData();
+                      } catch (err: any) {
+                        console.error("Withdraw error:", err);
+                        // Extract a string error message from the error object
+                        const errorStr =
+                          typeof err === "string"
+                            ? err
+                            : err?.message || err?.reason || JSON.stringify(err);
+                        if (errorStr.includes("no valid median")) {
+                          //Trading temporarily paused.  Unable to determine accurately X to USDC exchange rate now. Please try again later.
+                          showToast(
+                            `The oracle for the cUSD/USDC pair is temporarily not working in the Mento Platform. Please try again later or use another currency.`,
+                            "error"
+                          );
+                        } else {
+                          showToast(`Swap failed, please try again later!`, "error");
+                        }
+                      } finally {
+                        setSwappingToken(null);
+                      }
                     }}
                   />
                 </div>
@@ -153,7 +192,7 @@ export default function ManagePage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {balances.filter(({ balance }) => Number(balance) > 0).map(({ token, balance }) =>
-                    token !== "USD" ? (
+                    token !== "USD" && token !== "USDC" ? (
                       <div
                         key={token}
                         className="p-6 bg-gray-700 rounded-2xl shadow-lg text-center transition-transform hover:scale-105 hover:shadow-2xl flex flex-col items-center"
@@ -206,7 +245,7 @@ export default function ManagePage() {
                                   "error"
                                 );
                               } else {
-                                showToast(`Swap failed: ${err?.message || err}`, "error");
+                                showToast(`Swap failed, please try again later!`, "error");
                               }
                             } finally {
                               setSwappingToken(null);

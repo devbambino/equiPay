@@ -137,7 +137,7 @@ export default function SellPage() {
           "error"
         );
       } else {
-        showToast(`Swap failed: ${err?.message || err}`, "error");
+        showToast(`The Mento Platform is temporarily not working thus we are unable to determine accurately the USD exchange rate, please try again later!`, "error");
       }
       setTotal(0);
       setApprox(0);

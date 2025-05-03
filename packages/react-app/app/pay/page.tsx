@@ -174,7 +174,7 @@ export default function PayPage() {
           "error"
         );
       } else {
-        showToast("An error occurred. Please try again.", "error");
+        showToast("An error occurred while processing the payment. Please try again later.", "error");
       }
       setStep("scan");
     } finally {
@@ -213,7 +213,6 @@ export default function PayPage() {
           const hashPayment = await sendERC20(tokenAddress, merchant, amountWithFee, address);
           console.log("onSwap localToken merchant", hashPayment);
           //console.log(`onSwap pay merchant balance:${updatedBalance} balanceBig:${BigInt(updatedBalance)}`);
-          console.log("onSwap pay merchant balance:", updatedBalance, " balanceNumber:", +updatedBalance, " amountWithFee:", amountWithFee);
           setTxHash(hashPayment);
 
           // Polling function to wait for the balance to update
@@ -231,12 +230,15 @@ export default function PayPage() {
           await new Promise(res => setTimeout(res, waitingTime));
           //updatedBalance = await waitForBalance(updatedBalance);
 
+          console.log("onSwap pay merchant balance:", updatedBalance, " balanceNumber:", +updatedBalance, " amountWithFee:", amountWithFee);
+          const updatedBalanceInWei = parseUnits(updatedBalance, 18);
+
           //Payment to EquiPay
-          let adjustedFee = fee;
-          let balanceAfterPayment = +updatedBalance - +amountWithFee;
-          if (balanceAfterPayment < fee) { adjustedFee = balanceAfterPayment; }
-          console.log("onSwap pay fee2 balanceAfterPayment:", balanceAfterPayment, " adjustedFee:", `${adjustedFee}`);
-          const hashFee = await sendERC20(tokenAddress, equiPayAddress!, `${adjustedFee}`, address);
+          let adjustedFee = parseUnits(fee.toString(), 18);
+          let balanceAfterPaymentInWei = updatedBalanceInWei - parseUnits(amountWithFee, 18);;
+          if (balanceAfterPaymentInWei < adjustedFee) { adjustedFee = balanceAfterPaymentInWei; }
+          console.log("onSwap pay fee2 balanceAfterPayment:", balanceAfterPaymentInWei, " adjustedFee:", `${adjustedFee}`);
+          const hashFee = await sendERC20(tokenAddress, equiPayAddress!, `${adjustedFee}`, address, true);
           console.log("onSwap localToken fee", hashFee);
           setTxHash(hashFee);
 
@@ -295,7 +297,7 @@ export default function PayPage() {
           "error"
         );
       } else {
-        showToast("An error occurred while processing the payment. Please try again.", "error");
+        showToast("An error occurred while processing the payment. Please try again later.", "error");
       }
     } finally {
       setIsLoading(false);
