@@ -99,118 +99,138 @@ export default function ManagePage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-4 py-12">
       <h1 className="text-3xl font-bold mb-6 text-center">Manage</h1>
-      <div className="w-full max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-8 text-center">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2">Your Balance</h2>
-          <div className="h-1 w-16 bg-yellow-400 mx-auto rounded mb-6" />
+      {address ? (
+        <>
+          <div className="w-full max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-lg space-y-8 text-center">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">Your Balance</h2>
+              <div className="h-1 w-16 bg-yellow-400 mx-auto rounded mb-6" />
 
-          {/* Total summary
+              {/* Total summary
           <div className="mb-6 text-lg text-gray-300">
             USD Balance: <span className="font-bold text-yellow-300">{totalBalance.toFixed(2)}</span>
           </div>*/}
 
-          {/* USD Balance*/}
-          {usdBalance && (
-            <div
-              className="p-6 text-center transition-transform hover:scale-105 flex flex-col items-center"
-            >
-              <div className="text-4xl mb-2">{TOKEN_ICONS["USDC"] || "💰"}</div>
-              <div className="text-2xl font-bold mb-1">{Number(usdBalance).toFixed(2)}</div>
-              <div className="text-lg text-yellow-400 mb-4">USD</div>
-              <Button
-                title={swappingToken === "USD" ? "Processing..." : "Withdraw"}
-                variant="default"
-                size="sm"
-                className="w-full bg-yellow-400 hover:bg-white text-gray-900 rounded-full mt-4"
-                disabled={!!swappingToken}
-                onClick={async () => {
-                  if (!address) return;
-                  setSwappingToken("USD");
-                  showToast(`Withdrawal requested for USD`, "info");
-                  window.open(deeplinkWithdraw, "_blank");
-                  setSwappingToken(null);
-                }}
-              />
-            </div>
-          )}
-
-
-          {/* Balances grid */}
-          {loadingBalances ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-4 bg-gray-700 rounded-2xl shadow animate-pulse flex flex-col items-center">
-                  <div className="h-10 w-10 bg-gray-600 rounded-full mb-2" />
-                  <div className="h-6 w-20 bg-gray-600 rounded mb-1" />
-                  <div className="h-4 w-16 bg-gray-600 rounded" />
+              {/* USD Balance*/}
+              {usdBalance && (
+                <div
+                  className="p-6 text-center transition-transform hover:scale-105 flex flex-col items-center"
+                >
+                  <div className="text-4xl mb-2">{TOKEN_ICONS["USDC"] || "💰"}</div>
+                  <div className="text-2xl font-bold mb-1">{Number(usdBalance).toFixed(2)}</div>
+                  <div className="text-lg text-yellow-400 mb-4">USD</div>
+                  <Button
+                    title={swappingToken === "USD" ? "Processing..." : "Withdraw"}
+                    variant="default"
+                    size="sm"
+                    className="w-full bg-yellow-400 hover:bg-white text-gray-900 rounded-full mt-4"
+                    disabled={!!swappingToken}
+                    onClick={async () => {
+                      if (!address) return;
+                      setSwappingToken("USD");
+                      showToast(`Withdrawal requested for USD`, "info");
+                      window.open(deeplinkWithdraw, "_blank");
+                      setSwappingToken(null);
+                    }}
+                  />
                 </div>
-              ))}
-            </div>
-          ) : balances.length === 0 ? (
-            <div className="text-gray-400 py-12">No balances found. Start selling or receiving payments!</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {balances.filter(({ balance }) => Number(balance) > 0).map(({ token, balance }) =>
-                token !== "USD" ? (
-                  <div
-                    key={token}
-                    className="p-6 bg-gray-700 rounded-2xl shadow-lg text-center transition-transform hover:scale-105 hover:shadow-2xl flex flex-col items-center"
-                  >
-                    <div className="text-4xl mb-2">{TOKEN_ICONS[token] || "💰"}</div>
-                    <div className="text-2xl font-bold mb-1">{Number(balance).toFixed(2)}</div>
-                    <div className="text-lg text-yellow-400 mb-4">{token}</div>
-                    <Button
-                      title={swappingToken === token ? "Processing..." : "Swap to USD"}
-                      variant="default"
-                      size="sm"
-                      className="w-full bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"
-                      disabled={!!swappingToken}
-                      onClick={async () => {
-                        if (!address) return;
-                        const cUSDToken = process.env.NEXT_PUBLIC_USD_ADDRESS!;
-                        try {
-                          setSwappingToken(token);
-                          showToast(`Swapping ${Number(balance).toFixed(2)} ${token} to cUSD...`, "info");
-                          const prevCusdBalance = await getBalance(cUSDToken, address);
-                          await swapIn(
-                            TOKEN_MAP[token],
-                            cUSDToken,
-                            balance,
-                            address
-                          );
-                          // Poll for cUSD balance update
-                          const waitForCusdBalance = async (oldBalance: number, timeout = 60000, interval = 1000) => {
-                            const start = Date.now();
-                            while (Date.now() - start < timeout) {
-                              const newBalance = parseFloat(await getBalance(cUSDToken, address));
-                              if (newBalance > oldBalance) return;
-                              await new Promise(res => setTimeout(res, interval));
+              )}
+
+
+              {/* Balances grid */}
+              {loadingBalances ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="p-4 bg-gray-700 rounded-2xl shadow animate-pulse flex flex-col items-center">
+                      <div className="h-10 w-10 bg-gray-600 rounded-full mb-2" />
+                      <div className="h-6 w-20 bg-gray-600 rounded mb-1" />
+                      <div className="h-4 w-16 bg-gray-600 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : balances.length === 0 ? (
+                <div className="text-gray-400 py-12">No balances found. Start selling or receiving payments!</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {balances.filter(({ balance }) => Number(balance) > 0).map(({ token, balance }) =>
+                    token !== "USD" ? (
+                      <div
+                        key={token}
+                        className="p-6 bg-gray-700 rounded-2xl shadow-lg text-center transition-transform hover:scale-105 hover:shadow-2xl flex flex-col items-center"
+                      >
+                        <div className="text-4xl mb-2">{TOKEN_ICONS[token] || "💰"}</div>
+                        <div className="text-2xl font-bold mb-1">{Number(balance).toFixed(2)}</div>
+                        <div className="text-lg text-yellow-400 mb-4">{token}</div>
+                        <Button
+                          title={swappingToken === token ? "Processing..." : "Swap to USD"}
+                          variant="default"
+                          size="sm"
+                          className="w-full bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full"
+                          disabled={!!swappingToken}
+                          onClick={async () => {
+                            if (!address) return;
+                            const USDToken = process.env.NEXT_PUBLIC_USD_ADDRESS!;
+                            try {
+                              setSwappingToken(token);
+                              showToast(`Swapping ${Number(balance).toFixed(2)} ${token} to USD...`, "info");
+                              const prevCusdBalance = await getBalance(USDToken, address);
+                              await swapIn(
+                                TOKEN_MAP[token],
+                                USDToken,
+                                balance,
+                                address
+                              );
+                              // Poll for cUSD balance update
+                              const waitForCusdBalance = async (oldBalance: number, timeout = 60000, interval = 1000) => {
+                                const start = Date.now();
+                                while (Date.now() - start < timeout) {
+                                  const newBalance = parseFloat(await getBalance(USDToken, address));
+                                  if (newBalance > oldBalance) return;
+                                  await new Promise(res => setTimeout(res, interval));
+                                }
+                              };
+                              await waitForCusdBalance(parseFloat(prevCusdBalance));
+                              showToast(`Swap to USD complete. You can now withdraw.`, "success");
+                              await loadData();
+                            } catch (err: any) {
+                              console.error("Swap error:", err);
+                              // Extract a string error message from the error object
+                              const errorStr =
+                                typeof err === "string"
+                                  ? err
+                                  : err?.message || err?.reason || JSON.stringify(err);
+                              if (errorStr.includes("no valid median")) {
+                                //Trading temporarily paused.  Unable to determine accurately X to USDC exchange rate now. Please try again later.
+                                showToast(
+                                  `The oracle for the ${token.toUpperCase()}/USD pair is temporarily not working in the Mento Platform. Please try again later or use another currency.`,
+                                  "error"
+                                );
+                              } else {
+                                showToast(`Swap failed: ${err?.message || err}`, "error");
+                              }
+                            } finally {
+                              setSwappingToken(null);
                             }
-                          };
-                          await waitForCusdBalance(parseFloat(prevCusdBalance));
-                          showToast(`Swap to cUSD complete. You can now withdraw.`, "success");
-                          await loadData();
-                        } catch (err: any) {
-                          console.error("Swap error:", err);
-                          showToast(`Swap failed: ${err?.message || err}`, "error");
-                          return;
-                        } finally {
-                          setSwappingToken(null);
-                        }
-                      }}
-                    />
-                  </div>
+                          }}
+                        />
+                      </div>
 
-                ) : ("")
+                    ) : ("")
 
-
-
-              )
-              }
+                  )
+                  }
+                </div>
+              )}
             </div>
-          )}
+          </div>
+        </>
+      ) : (
+        <div className="mt-8">
+          <p className="text-lg text-gray-500">
+            Please connect your wallet to start managing it.
+          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }

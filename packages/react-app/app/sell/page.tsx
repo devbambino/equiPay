@@ -8,13 +8,14 @@ import { useAccount } from "wagmi";
 import { useToast } from "@/components/ui/ToastProvider";
 import { methodsWeb3 } from "@/contexts/methodsWeb3";
 
-const cUSDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
+const USDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
 const cKESTokenAddress = process.env.NEXT_PUBLIC_KES_ADDRESS; // Testnet
 const cCOPTokenAddress = process.env.NEXT_PUBLIC_COP_ADDRESS; // Testnet
 const cPISOTokenAddress = process.env.NEXT_PUBLIC_PUSO_ADDRESS; // Testnet
 const cREALTokenAddress = process.env.NEXT_PUBLIC_REAL_ADDRESS; // Testnet
 const cGHSTokenAddress = process.env.NEXT_PUBLIC_GHS_ADDRESS; // Testnet
 const cZARTokenAddress = process.env.NEXT_PUBLIC_ZAR_ADDRESS; // Testnet
+const rate = Number(process.env.NEXT_PUBLIC_EQUIPAY_FEE); // Fee rate charged bu EuiPay per payment
 
 export default function SellPage() {
   const { quoteIn, mentoReady } = methodsWeb3();
@@ -27,8 +28,9 @@ export default function SellPage() {
   const [quote, setQuote] = useState<string>("");
   const qrRef = useRef<HTMLDivElement>(null);
   const qrInstance = useRef<QRCodeStyling | null>(null);
-  const [rate, setRate] = useState(0.00025); // Example: 1 cCOP = $0.00025
-  const [subtotal, setSubtotal] = useState(0);
+  const [fee, setFee] = useState(0);
+  const [feeUsd, setFeeUsd] = useState(0);
+  const [total, setTotal] = useState(0);
   const [usdSubtotal, setUsdSubtotal] = useState(0);
   const [symbol, setSymbol] = useState("cCOP");
   const [fiat, setFiat] = useState("$");
@@ -49,48 +51,47 @@ export default function SellPage() {
       case "piso": return cPISOTokenAddress!;
       case "zar": return cZARTokenAddress!;
       case "ghs": return cGHSTokenAddress!;
-      default: return cUSDTokenAddress!;
+      default: return USDTokenAddress!;
     }
   };
 
   // Update subtotals and payload
   useEffect(() => {
     if (amount && !isNaN(Number(amount))) {
-      // Example: 1 cCOP = $0.00025, 1 cUSD = $1
-      let rate = 0.00025;
+
       let symbol = "cCOP";
       let fiat = "$";
       let name = "COP";
       let decimals = 2;
       if (token === "cop") {
-        rate = 0.00025; symbol = "cCOP"; fiat = "COP$"; name = "COP"; decimals = 2;
+        symbol = "cCOP"; fiat = "COP$"; name = "COP"; decimals = 2;
       } else if (token === "ghs") {
-        rate = 0.07; symbol = "cGHS"; fiat = "₵"; name = "GHS"; decimals = 2;
+        symbol = "cGHS"; fiat = "₵"; name = "GHS"; decimals = 2;
       } else if (token === "kes") {
-        rate = 0.007; symbol = "cKES"; fiat = "KSh"; name = "KES"; decimals = 2;
+        symbol = "cKES"; fiat = "KSh"; name = "KES"; decimals = 2;
       } else if (token === "piso") {
-        rate = 0.018; symbol = "cPHP"; fiat = "₱"; name = "PHP"; decimals = 2;
+        symbol = "cPHP"; fiat = "₱"; name = "PHP"; decimals = 2;
       } else if (token === "real") {
-        rate = 0.20; symbol = "cBRL"; fiat = "R$"; name = "BRL"; decimals = 2;
+        symbol = "cBRL"; fiat = "R$"; name = "BRL"; decimals = 2;
       } else if (token === "zar") {
-        rate = 0.052; symbol = "cZAR"; fiat = "R"; name = "ZAR"; decimals = 2;
+        symbol = "cZAR"; fiat = "R"; name = "ZAR"; decimals = 2;
       }
-      setRate(rate);
+      setFee(rate * Number(amount));
+      setFeeUsd(0);
       setSymbol(symbol);
       setFiat(fiat);
       setName(name);
       setDecimals(decimals);
-      setSubtotal(Number(amount));
       setApprox(Number(amount) * rate);
 
-      if(allowFallback){
+      if (allowFallback) {
         onCheckQuote();
-      }else{
+      } else {
         setQuote("");
       }
-      
+
     } else {
-      setSubtotal(0);
+      setTotal(0);
       setApprox(0);
       setQuote("");
     }
@@ -116,9 +117,32 @@ export default function SellPage() {
   }, [amount, token, allowFallback]);
 
   const onCheckQuote = async () => {
-    const tokenAddress = getTokenAddress(token);
-    const neededInFallbackToken = await quoteIn(cUSDTokenAddress!, tokenAddress, amount);
-    setQuote(neededInFallbackToken);
+    try {
+      const tokenAddress = getTokenAddress(token);
+      const neededInFallbackToken = await quoteIn(USDTokenAddress!, tokenAddress, amount);
+      console.log("neededInFallbackToken", neededInFallbackToken);
+      setFeeUsd(rate * Number(neededInFallbackToken));
+      setQuote(neededInFallbackToken);
+    } catch (err: any) {
+      console.error("Sell quote error:", err);
+      // Extract a string error message from the error object
+      const errorStr =
+        typeof err === "string"
+          ? err
+          : err?.message || err?.reason || JSON.stringify(err);
+      if (errorStr.includes("no valid median")) {
+        //Trading temporarily paused.  Unable to determine accurately X to USDC exchange rate now. Please try again later.
+        showToast(
+          `The oracle for the ${token.toUpperCase()}/USD pair is temporarily not working in the Mento Platform. Please try again later or use another currency.`,
+          "error"
+        );
+      } else {
+        showToast(`Swap failed: ${err?.message || err}`, "error");
+      }
+      setTotal(0);
+      setApprox(0);
+      setQuote("");
+    }
   };
 
   // Copy link handler
@@ -165,7 +189,7 @@ export default function SellPage() {
       qrInstance.current.update({
         data: JSON.stringify(payload),
       });
-    }else {
+    } else {
       setPayload("");
       setLink("");
     }
@@ -213,18 +237,19 @@ export default function SellPage() {
                   checked={allowFallback}
                   onChange={e => setAllowFallback(e.target.checked)}
                 />
-                <span>Allow USD fallback (if local currency is not supported by customer)</span>
+                <span>USD fallback <span className="text-sm text-yellow-200">(Receive USD if customer doesn't have local currency)</span></span>
               </label>
             </div>
             {/* Subtotal */}
             {amount && !isNaN(Number(amount)) && (
               <div className="text-lg font-medium text-yellow-300 mb-2">
-                You will receive {fiat}{subtotal} {quote && (
-                    <>
-                      (≈ $USD {Number(quote).toFixed(2)}) 
-                      <br /><span className="text-xs text-white">($USD 1  ≈ {fiat}{(Number(amount)/Number(quote)).toFixed(2)})</span>
-                    </>
-                  )}
+                You will receive {fiat}{(Number(amount) - fee).toFixed(2)}* {quote && (
+                  <>
+                    (≈ $USD {(Number(quote) - feeUsd).toFixed(2)})
+                    <br /><span className="text-xs text-white">($USD 1  ≈ {fiat}{(Number(amount) / Number(quote)).toFixed(2)})</span>
+                  </>
+                )}
+                <br /><span className="text-xs text-white">*Including 1% fee of {fiat}{(Number(fee)).toFixed(2)} {quote && (`(≈ $USD ${(Number(feeUsd)).toFixed(2)})`)}</span>
               </div>
             )}
             {/* QR and Copy Link */}

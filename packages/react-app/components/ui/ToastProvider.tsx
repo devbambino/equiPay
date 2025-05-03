@@ -23,7 +23,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = (message: string, type: ToastType = "info") => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2500);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
   };
   return (
     <ToastContext.Provider value={{ toasts, showToast }}>

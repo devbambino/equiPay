@@ -15,6 +15,7 @@ export default function Home() {
                 <p className="mt-4 text-lg sm:text-xl text-gray-300 max-w-xl">
                     EquiPay delivers sub-cent, local-currency QR payments powered by MiniPay & Mento—no bank account required.
                 </p>
+                {/* CTA Buttons 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4">
                     <Button
                         onClick={() => window.location.href = "/sell"}
@@ -27,7 +28,7 @@ export default function Home() {
                         className="px-8 py-4 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full text-lg font-semibold"
                         title="Scan to Pay"
                     />
-                </div>
+                </div>*/}
                 {/* Hero Image */}
                 <div className="mt-12 w-full max-w-2xl">
                     <Image

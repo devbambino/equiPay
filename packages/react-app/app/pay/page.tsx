@@ -4,10 +4,14 @@ import { useState, useEffect } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
+import {parseUnits,formatUnits} from "viem";
 import { methodsWeb3 } from "@/contexts/methodsWeb3";
 import { useToast } from "@/components/ui/ToastProvider";
 
-const cUSDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
+const rate = Number(process.env.NEXT_PUBLIC_EQUIPAY_FEE); // Fee rate charged bu EuiPay per payment
+const equiPayAddress = process.env.NEXT_PUBLIC_EQUIPAY_WALLET; // EquiPay wallet address for collecting fees
+
+const USDTokenAddress = process.env.NEXT_PUBLIC_USD_ADDRESS; // Testnet
 const cKESTokenAddress = process.env.NEXT_PUBLIC_KES_ADDRESS; // Testnet
 const cCOPTokenAddress = process.env.NEXT_PUBLIC_COP_ADDRESS; // Testnet
 const cPISOTokenAddress = process.env.NEXT_PUBLIC_PUSO_ADDRESS; // Testnet
@@ -16,7 +20,7 @@ const cGHSTokenAddress = process.env.NEXT_PUBLIC_GHS_ADDRESS; // Testnet
 const cZARTokenAddress = process.env.NEXT_PUBLIC_ZAR_ADDRESS; // Testnet
 
 export default function PayPage() {
-  const { getBalance, swapIn, sendERC20, sendCUSD, quoteIn, mentoReady } = methodsWeb3();
+  const { getBalance, getBalanceInWei, swapIn, sendERC20, sendUSD, quoteIn, mentoReady } = methodsWeb3();
   const { address } = useAccount();
   const [payload, setPayload] = useState<{
     merchant: string;
@@ -30,6 +34,7 @@ export default function PayPage() {
   const [txHash, setTxHash] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSwapRequired, setIsSwapRequired] = useState<boolean>(false);
+  const [waitingTime, setWaitingTime] = useState<number>(1500);//2 seconds
   const { showToast } = useToast();
 
   // Helper to resolve token address
@@ -41,7 +46,7 @@ export default function PayPage() {
       case "piso": return cPISOTokenAddress!;
       case "zar": return cZARTokenAddress!;
       case "ghs": return cGHSTokenAddress!;
-      default: return cUSDTokenAddress!;
+      default: return USDTokenAddress!;
     }
   };
 
@@ -80,46 +85,98 @@ export default function PayPage() {
       // 1) Direct pay in same token
       let balanceInMerchantsToken = await getBalance(tokenAddress, address);
       if (+balanceInMerchantsToken >= +amount) {
-        const hash = await sendERC20(tokenAddress, merchant, amount, address);
+        //Payment to the merchant
+        let fee = rate * Number(amount);
+        const amountWithFee = (Number(amount) - fee).toFixed(3);
+        const hash = await sendERC20(tokenAddress, merchant, amountWithFee, address);
+        console.log("onPay localToken merchant", hash);
         setTxHash(hash);
+
+        // Polling function to wait for the balance to update
+        /*const waitForBalance = async (lastBalance: string, timeout = 60000, interval = 2000) => {
+          const start = Date.now();
+          while (Date.now() - start < timeout) {
+            const balance = await getBalance(tokenAddress, address);
+            console.log("onPay Waiting for token balance update... lastBalance:", lastBalance, " balance:", balance);
+            if (+lastBalance > +balance) return balance;
+            await new Promise((resolve) => setTimeout(resolve, interval));
+          }
+          return await getBalance(tokenAddress, address);
+        };
+        // Wait for the swapped tokens to reflect in the balance
+        let updatedBalance = await waitForBalance(balanceInMerchantsToken);*/
+
+        await new Promise(res => setTimeout(res, waitingTime));
+
+        //Payment to EquiPay 
+        let balanceAfterPayment = Number(balanceInMerchantsToken) - +amountWithFee;
+        let adjustedFee = fee;
+        if (balanceAfterPayment < fee) { adjustedFee = balanceAfterPayment; }
+        const hashFee = await sendERC20(tokenAddress, equiPayAddress!, `${adjustedFee}`, address);
+        console.log("onPay localToken fee", hashFee);
+        setTxHash(hashFee);
+
         setStep("done");
         showToast("Payment done!", "success");
         return;
       }
-      // 2) Fallback cUSD
-      let balanceInFallbackToken = await getBalance(cUSDTokenAddress!, address);
-      const neededInFallbackToken = await quoteIn(cUSDTokenAddress!, tokenAddress, amount);
 
+      /*if (!allowFallback) {
+        showToast(`Insufficient balance, please add ${token.toUpperCase()} to your wallet and try again later.`, "error");
+        return;
+      }
+      */
 
-      if (+balanceInFallbackToken >= +neededInFallbackToken) {
-        setQuote(Number(neededInFallbackToken).toFixed(3));
+      // 2) Paying with USD
+      let balanceInFallbackToken = await getBalance(USDTokenAddress!, address);
+      if (+balanceInFallbackToken < 0) {
+        showToast(`Insufficient balance, please add ${token.toUpperCase()} or USD to your wallet and try again later.`, "error");
+        return;
+      }
 
-        //Not enough balance in merchants token, but enough in cUSD
+      const neededInFallbackToken = await quoteIn(USDTokenAddress!, tokenAddress, amount);
+      console.log("balanceInFallbackToken", balanceInFallbackToken);
+      console.log("neededInFallbackToken", neededInFallbackToken);
+
+      const adjustedQuote = Number(neededInFallbackToken).toFixed(3)
+      setQuote(adjustedQuote);
+      if (+balanceInFallbackToken >= +adjustedQuote) {
+        //Not enough balance in merchants token, but enough in USD
         if (allowFallback) {
-          // 2) Send cUSD directly
+          // 2) Send USD directly
           setIsSwapRequired(false);
           /*const hash = await sendCUSD(merchant, neededInFallbackToken, address);
           setTxHash(hash);
           setStep("done");
           showToast("Transaction submitted", "success");*/
         } else {
-          // 3) Swap cUSD to  merchant currency
+          // 3) Swap USD to  merchant currency
           setIsSwapRequired(true);
         }
         setStep("confirm");
-        showToast(`Not enough ${token} in your wallet. We will use USD instead.`, "info");
+        showToast(`Not enough ${token.toUpperCase()} in your wallet. We will use USD instead.`, "info");
         return;
       } else {
-        showToast(`Insufficient balance, please add ${token} or USD to you wallet and try again later.`, "error");
+        showToast(`Insufficient balance, please add ${token.toUpperCase()} or USD to you wallet and try again later.`, "error");
+        return;
       }
     } catch (err: any) {
       console.error("Pay Error onPay:", err);
-      if (err.reason === "no valid median") {
-        showToast("Swap failed: No valid median", "error");
-        setStep("scan");
+      // Extract a string error message from the error object
+      const errorStr =
+        typeof err === "string"
+          ? err
+          : err?.message || err?.reason || JSON.stringify(err);
+      if (errorStr.includes("no valid median")) {
+        //Trading temporarily paused.  Unable to determine accurately X to USDC exchange rate now. Please try again later.
+        showToast(
+          `The oracle for the ${token.toUpperCase()}/USD pair is temporarily not working in the Mento Platform. Please try again later or use another currency.`,
+          "error"
+        );
       } else {
         showToast("An error occurred. Please try again.", "error");
       }
+      setStep("scan");
     } finally {
       setIsLoading(false);
     }
@@ -133,52 +190,113 @@ export default function PayPage() {
     const tokenAddress = getTokenAddress(token);
     try {
       if (isSwapRequired) {
-        // 3) Swap cUSD to  merchant currency
-        const hashSwap = await swapIn(cUSDTokenAddress!, tokenAddress, quote, address, 100);
+        // 3) Swap USD to  merchant currency
+        const currentBalance = await getBalance(tokenAddress, address);
+        const hashSwap = await swapIn(USDTokenAddress!, tokenAddress, quote, address, 100);
         // Polling function to wait for the balance to update
-        const waitForBalance = async (minAmount: number, timeout = 60000, interval = 500) => {
+        const waitForBalance = async (lastBalance: string, timeout = 60000, interval = 1000) => {
           const start = Date.now();
           while (Date.now() - start < timeout) {
             const balance = await getBalance(tokenAddress, address);
-            if (+balance >= +minAmount) return balance;
+            console.log("onSwap swap Waiting for token balance update... lastBalance:", lastBalance, " balance:", balance);
+            if (+balance > +lastBalance) return balance;
             await new Promise((resolve) => setTimeout(resolve, interval));
           }
           return await getBalance(tokenAddress, address);
         };
         // Wait for the swapped tokens to reflect in the balance
-        const updatedBalance = await waitForBalance(+amount);
-        if (+updatedBalance >= +amount) {
-          const hashPayment = await sendERC20(tokenAddress, merchant, amount, address);
+        let updatedBalance = await waitForBalance(currentBalance);
+        const fee = rate * Number(amount);
+        const amountWithFee = (Number(amount) - fee).toFixed(3);
+        if (+updatedBalance >= +amountWithFee) {
+          //Payment to the merchant
+          const hashPayment = await sendERC20(tokenAddress, merchant, amountWithFee, address);
+          console.log("onSwap localToken merchant", hashPayment);
+          //console.log(`onSwap pay merchant balance:${updatedBalance} balanceBig:${BigInt(updatedBalance)}`);
+          console.log("onSwap pay merchant balance:", updatedBalance, " balanceNumber:", +updatedBalance, " amountWithFee:", amountWithFee);
           setTxHash(hashPayment);
+
+          // Polling function to wait for the balance to update
+          /*const waitForBalance = async (lastBalance: string, timeout = 60000, interval = 2000) => {
+            const start = Date.now();
+            while (Date.now() - start < timeout) {
+              const balance = await getBalance(tokenAddress, address);
+              console.log("onSwap pay Waiting for token balance update... lastBalance:", lastBalance, " balance:", balance);
+              if (+lastBalance > +balance) return balance;
+              await new Promise((resolve) => setTimeout(resolve, interval));
+            }
+            return await getBalance(tokenAddress, address);
+          };*/
+          // Wait for the swapped tokens to reflect in the balance
+          await new Promise(res => setTimeout(res, waitingTime));
+          //updatedBalance = await waitForBalance(updatedBalance);
+
+          //Payment to EquiPay
+          let adjustedFee = fee;
+          let balanceAfterPayment = +updatedBalance - +amountWithFee;
+          if (balanceAfterPayment < fee) { adjustedFee = balanceAfterPayment; }
+          console.log("onSwap pay fee2 balanceAfterPayment:", balanceAfterPayment, " adjustedFee:", `${adjustedFee}`);
+          const hashFee = await sendERC20(tokenAddress, equiPayAddress!, `${adjustedFee}`, address);
+          console.log("onSwap localToken fee", hashFee);
+          setTxHash(hashFee);
+
           setStep("done");
           showToast("Payment done!", "success");
           return;
         } else {
-          showToast(`Insufficient balance in ${token}, please add more USD and try again later.`, "error");
+          showToast(`Insufficient balance in ${token.toUpperCase()}, please add more USD and try again later.`, "error");
         }
       } else {
-        //2) Send cUSD directly
-        const hash = await sendCUSD(merchant, quote, address);
-        setTxHash(hash);
+        //2) Send USD directly
+        //let balanceInFallbackToken = await getBalance(USDTokenAddress!, address);
+
+        //Payment to the merchant
+        const fee = rate * Number(quote);
+        const quoteWithFee = (Number(quote) - fee).toFixed(3);
+        const hashPayment = await sendUSD(merchant, quoteWithFee, address);
+        console.log("onSwap USD merchant", hashPayment);
+        setTxHash(hashPayment);
+
+        // Polling function to wait for the balance to update
+        /*const waitForBalance = async (lastBalance: string, timeout = 60000, interval = 2000) => {
+          const start = Date.now();
+          while (Date.now() - start < timeout) {
+            const balance = await getBalance(USDTokenAddress!, address);
+            console.log("onSwap pay Waiting for USD balance update... lastBalance:", lastBalance, " balance:", balance);
+            if (+lastBalance > +balance) return balance;
+            await new Promise((resolve) => setTimeout(resolve, interval));
+          }
+          return await getBalance(tokenAddress, address);
+        };*/
+        // Wait for the merchant payment to reflect in the balance
+        await new Promise(res => setTimeout(res, 1000));
+        //await waitForBalance(balanceInFallbackToken);
+
+        //Payment to EquiPay
+        const hashFee = await sendUSD(equiPayAddress!, `${Number(quote) - Number(quoteWithFee)}`, address);
+        console.log("onSwap USD fee", hashFee);
+        setTxHash(hashFee);
+
         setStep("done");
         showToast("Payment done!", "success");
       }
 
     } catch (err: any) {
-      console.error("Pay Error onSwap:", err);
-      
-      if (err.reason === "no valid median") {
-        showToast("Swap failed: No valid median", "error");
-        setStep("scan");
-      } else if (err.reason === "An internal error was received") {
-        //TransactionExecutionError: An internal error was received.
-        showToast("Swap failed: No valid median", "error");
-        setStep("scan");
+      console.error("Swap Error onSwap:", err);
+      // Extract a string error message from the error object
+      const errorStr =
+        typeof err === "string"
+          ? err
+          : err?.message || err?.reason || JSON.stringify(err);
+      if (errorStr.includes("no valid median")) {
+        //Trading temporarily paused.  Unable to determine accurately X to USDC exchange rate now. Please try again later.
+        showToast(
+          `The oracle for the ${token.toUpperCase()}/USD pair is temporarily not working in the Mento Platform. Please try again later or use another currency.`,
+          "error"
+        );
       } else {
-        showToast("Swap failed, please try again later.", "error");
+        showToast("An error occurred while processing the payment. Please try again.", "error");
       }
-
-      
     } finally {
       setIsLoading(false);
     }
@@ -254,7 +372,7 @@ export default function PayPage() {
                   You’ll pay <strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong> using <strong>{quote} USD</strong> from your wallet.
                   {quote && (
                     <>
-                      <br /><span className="text-xs text-yellow-400">( Rate: 1 USD ≈ {(Number(payload?.amount)/Number(quote)).toFixed(2)} {payload?.token.toLocaleUpperCase()} )</span>
+                      <br /><span className="text-xs text-yellow-400">(Rate: 1 USD ≈ {(Number(payload?.amount) / Number(quote)).toFixed(2)} {payload?.token.toLocaleUpperCase()})</span>
                     </>
                   )}
                 </p>
@@ -264,10 +382,10 @@ export default function PayPage() {
             {step === "done" && txHash && (
               <>
                 <p>🎉 <span className="text-xl text-yellow-400">Congrats!!!</span> 🎉
-                <br /><br />You paid {quote ? (<>
-                  <strong>{quote} USD</strong> (≈ {payload?.amount} {payload?.token.toLocaleUpperCase()})
-                </>
-                ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant!</p>
+                  <br /><br />You paid {quote ? (<>
+                    <strong>{quote} USD</strong> (≈ {payload?.amount} {payload?.token.toLocaleUpperCase()})
+                  </>
+                  ) : (<strong>{payload?.amount} {payload?.token.toLocaleUpperCase()}</strong>)} to the merchant!</p>
                 <Button onClick={() => setStep("init")} title="New Payment" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
               </>
             )}
