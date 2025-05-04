@@ -72,6 +72,11 @@ Watch how EquiPay powers real-world flows across markets in the Global South:
 
 ## 🔧 Getting Started
 
+0. **Running the production app**
+   Open the `https://equipay-puce.vercel.app` url in the MiniPay app. Click "Developer settings", then "Load test page", and enter the `https://equipay-puce.vercel.app/` EquiPay url in the MiniPay app, and start transacting!
+
+   You will need testnet Celo and cUSD, besides Mento local stablecoins. Please, get them in the Celo faucet or get USDC from `https://faucet.circle.com/` and then swap them for the corresponding tokens in `https://app.mento.org/` in the Alfajores testnet.
+
 1. **Clone the repo**  
    ```bash
    git clone https://github.com/devbambino/equipay.git
@@ -104,8 +109,7 @@ Watch how EquiPay powers real-world flows across markets in the Global South:
    ngrok config add-authtoken <token>
    ngrok http 3000
    ```
-   Open the displayed URL in the MiniPay app.
-   Load `http://ngrok-url.com` in MiniPay app, and start transacting!
+   Open the displayed URL in the MiniPay app. Click "Developer settings", then "Load test page", and enter the `http://ngrok-url.com` ngrok url in the MiniPay app, and start transacting!
 
 ---
 

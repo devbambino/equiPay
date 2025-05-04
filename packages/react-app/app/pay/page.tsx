@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
-import {parseUnits,formatUnits} from "viem";
+import { parseUnits, formatUnits } from "viem";
 import { methodsWeb3 } from "@/contexts/methodsWeb3";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -358,7 +358,10 @@ export default function PayPage() {
             </div>
             {/* ...existing code... */}
             {step === "init" && (
-              <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
+              <>
+                <br/><span className="text-sm text-yellow-200">(You will need testnet Celo and cUSD, besides Mento local stablecoins. Please, get them in the Celo faucet.)</span>
+                <Button onClick={() => setStep("scan")} title="Scan to Pay" disabled={isLoading} className="mt-2 bg-[#0e76fe] hover:bg-white text-white hover:text-gray-900 rounded-full" />
+              </>
             )}
             {step === "decide" && payload && (
               <>
