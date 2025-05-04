@@ -1,78 +1,123 @@
+
 # EquiPay
 
-**EquiPay** is a DeFi mini-app built on Celo, MiniPay & Mento that empowers merchants in the Global South to accept instant QR-based stablecoin payments and offer instant digital money to cash withdrawals.
+> **Empowering the Global South with instant QR/URL payments in cKES, cREAL, PUSO, and more!!!**  
+> EquiPay is A Celo-powered DeFi mini-app for instant, low-cost, cashless payments in the Global South (LATAM, Africa, and Southeast Asia). EquiPay empowers merchants in the Global South to accept instant QR-based and URL-based stablecoin payments and offer instant digital money to cash withdrawals.
 
 ---
 
-## 🚀 Why EquiPay?
+## 🌟 Problem
 
-- **Inclusive Payments:** No bank account required—customers pay in local stablecoins (cCOP, cKES, cREAL, etc.) via QR.  
-- **Automatic Swaps:** Built-in Mento SDK handles background currency conversions, ensuring merchants get paid in their preferred token.  
-- **Digital-to-Cash Easy & Quick:** Merchants and customers can withdraw whenever they want their balances to bank accounts or debit cards, quick and easy.
+**EquiPay** solves two critical pain points in emerging markets:
 
----
-
-## 🏗️ Tech Stack
-
-- **Frontend:** Next.js 15, React 18, Tailwind CSS, `@yudiel/react-qr-scanner`, `qr-code-styling`  
-- **Blockchain:** Viem for wallet, Celo Alfajores, Mento SDK for swaps  
-- **Contracts:** Solidity + Hardhat for NFT-based MiniPay flows & community pools  
-- **Deployment:** Vercel (Next.js) / ngrok for local app testing
+1. **Limited Payment/Banking Options**  
+   +1.4 billion adults are un(der)banked, concentrated in LATAM, Sub-Saharan Africa, and Southeast Asia. They are excluded due to high fees, lack of identity infrastructure, and volatile local currencies.
+2. **Hidden Fees & Slow Transfers**  
+   Cross-border remittance costs average 6%, twice the UN Sustainable Development target. In addition, freelancers and small businesses coould lock in exchange rates and receive funds instantly in local stablecoins (e.g. cKES, cREAL, etc) or cUSD.  
 
 ---
 
-## 🎯 Features
+## 🚀 Solution
+
+- **Instant QR/URL-Based Checkout**  
+  Scan a dynamically generated QR code or click payment URL → check payment details → confirm → done. The recipient gets either local stablecoins or cUSD, depending on the specifications set during the QR/URL generation.
+
+- **Automated On-Chain Swaps**  
+  Seamless swapping between cUSD and Mento local stablecoins. Built on Mento’s AMM: optimal rates, fully collateralized, programmable smart contracts.
+
+- **Multi-Rail Cash-Out**  
+  Thanks to MiniPay withdrawl feature, convert cKES → KES via M-PESA; cREAL → BRL or PUSO → PHP via card.
+
+- **Modular & Extensible**  
+  Next.js + Tailwind UI; Viem wallet integration; fully mobile friendly.
+
+By combining **Celo**, **Mento**, and **MiniPay**, EquiPay delivers near-zero fees, sub-5-second settlements, and seamless on-ramp/off-ramp via local rails.
+
+---
+
+## 🎯 Key Features
 
 1. **Merchant Portal** (`/sell`):  
-   - Generate dynamic QR codes with `{ merchant, amount, token, allowFallback }` payload.  
+   - Generate dynamic QR codes and URL links with `{ merchant, amount, description, token, allowFallback }` payload.  
+
 2. **Customer App** (`/pay`):  
-   - Scan QR → auto-choose best payment path: same token → cUSD fallback → cross-token swap → pay.  
-3. **Dashboard** (coming soon):  
-   - View transaction history, and BNPL repayments.
+   - Scan QR or click url → auto-choose best payment path: same token → cUSD fallback → cross-token swap → pay.  
+
+3. **Dashboard** (`/manage`):  
+   - View balances and prepare swap local stablecoins to cUSD.
 
 ---
 
-## 📅 Roadmap
 
-| Phase      |  Milestones                                    |
-| ---------- |  --------------------------------------------- |
-| Week 1/2   | Launch `/sell` & `/pay` flows, QR integration |
-| Week 3     | UI/UX polish, analytics, hackathon demo prep   |
+## 📦 Tech Stack
+
+| Layer           | Technology                          |
+| --------------- | ----------------------------------- |
+| **Frontend**    | Next.js, React, Tailwind CSS        |
+| **Blockchain**  | Celo Alfajores, Mento Protocol SDK  |
+| **Wallet**      | MiniPay (Web and Android/iOS Wallet)|
+| **Deployment**  | Vercel (Frontend)                   |
 
 ---
 
-## 📖 Getting Started
+## 🎬 Demo Video
 
-1. **Clone & Install**  
+Watch how EquiPay powers real-world flows across markets in the Global South:
+
+- **Kenya (cKES):** QR-based street market payments  
+
+[▶️ View Demo on YouTube](https://youtu.be/tGmzq9yaXTo)
+
+---
+
+## 🔧 Getting Started
+
+1. **Clone the repo**  
    ```bash
-   git clone https://github.com/your-org/equipay.git
-   cd equipay/packages/react-app
+   git clone https://github.com/devbambino/equipay.git
+   cd equipay
+   ```
+
+2. **Install dependencies**
+
+   ```bash
    npm install
    ```
-2. **Configure**  
-   Copy `.env.template` → `.env` with your Alfajores RPC, Mento & stablecoin addresses.  
-3. **Run Dev Server**  
+
+3. **Configure environment**
    ```bash
+   cd packages/react-app
    npm run dev
    ```
-4. **Test on MiniPay**  
+   Copy `.env.template` → `.env` inside `packages/react-app` with your Alfajores RPC, your Wallet connect keys, Mento & stablecoin addresses.
+
+4. **Run the dev server**
+
+   ```bash
+   cd packages/react-app
+   npm run dev
+   ```
+
+5. **Open in MiniPay app**
    ```bash
    curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list && sudo apt update && sudo apt install ngrok
    ngrok config add-authtoken <token>
    ngrok http 3000
    ```
    Open the displayed URL in the MiniPay app.
+   Load `http://ngrok-url.com` in MiniPay app, and start transacting!
 
 ---
 
-## 📑 License & Acknowledgements
+## 📞 Contact & Team
 
-- **License:**   
-- **Hackathon:** Global Stablecoin (Mento Labs & Celo Foundation)  
-- **Thanks:** Hardhat, OpenZeppelin, Celo, Mento SDK, Tailwind CSS, Next.js.
+**Fredy aka Dev Bambino**
+– Tech entrepreneur and Fullstack AI/Blockchain dev
+– USA | ✉️ [devbambinoacc@gmail.com](mailto:devbambinoacc@gmail.com)
 
+---
 
 ## 🚀 Acknowledgements  
 - **Global Stablecoin Hackathon:** \$25 000 prize pool hosted by Mento Labs, and Celo Foundation.  
 - Inspiration from the **Mento Protocol** on Celo and the **MiniPay** wallet team.  
-- Thank you to all open‑source projects: Hardhat, OpenZeppelin, Celo, Mento SDK, React, and Tailwind CSS.  
+- Thank you to all open‑source projects: Hardhat, OpenZeppelin, Celo, Mento SDK, React, and Tailwind CSS. 

@@ -128,7 +128,8 @@ export default function ManagePage() {
                     disabled={Number(usdBalance) === 0 || !!swappingToken}
                     onClick={async () => {
                       if (!address) return;
-                      try {
+                      showToast(`Please go to MiniPay's home and click the Withdraw button.`, "success");
+                      /*try {
                         setSwappingToken("USD");
                         showToast(`Swapping to USDC to be used in MiniPay...`, "info");
                         const prevUSDCBalance = await getBalance(TOKEN_MAP["USDC"], address);
@@ -169,7 +170,7 @@ export default function ManagePage() {
                         }
                       } finally {
                         setSwappingToken(null);
-                      }
+                      }*/
                     }}
                   />
                 </div>
